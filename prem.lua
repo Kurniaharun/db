@@ -1,21 +1,93 @@
--- Load Orion Lib
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+-- Load KeceHub Lib
+local KeceHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
 -- Main Window
-local Window = OrionLib:MakeWindow({
-    Name = "KECE HUB V1",
+local Window = KeceHub:MakeWindow({
+    Name = "KECE HUB TRUE V2",
     HidePremium = false,
     SaveConfig = true,
-    ConfigFolder = "ServerChangerV1"
+    ConfigFolder = "KeceHubV2"
 })
 
--- Tab: Script (Free)
+-- Tab: Status
+local StatusTab = Window:MakeTab({
+    Name = "Status",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local startTime = os.clock()
+
+-- Update Status Info
+StatusTab:AddLabel("Name Display: " .. game.Players.LocalPlayer.DisplayName)
+StatusTab:AddLabel("Username: " .. game.Players.LocalPlayer.Name)
+StatusTab:AddLabel("Status SC: VIP (REAL)")
+StatusTab:AddLabel("Time Running: 0s")
+StatusTab:AddLabel("FPS: Calculating...")
+
+task.spawn(function()
+    while true do
+        local timeRunning = math.floor(os.clock() - startTime)
+        local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+        StatusTab:UpdateLabel(3, "Time Running: " .. timeRunning .. "s")
+        StatusTab:UpdateLabel(4, "FPS: " .. fps)
+        task.wait(1)
+    end
+end)
+
+-- Tab: Script (Free) (Main)
 local FreeTab = Window:MakeTab({
     Name = "Script (Free)",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
+-- Toggles
+FreeTab:AddToggle({
+    Name = "Bypass ON/OFF",
+    Default = false,
+    Callback = function(value)
+        if value then
+            KeceHub:MakeNotification({
+                Name = "Info",
+                Content = "Bypass Enabled",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            KeceHub:MakeNotification({
+                Name = "Info",
+                Content = "Bypass Disabled",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+FreeTab:AddToggle({
+    Name = "Clear Report ON/OFF",
+    Default = false,
+    Callback = function(value)
+        if value then
+            KeceHub:MakeNotification({
+                Name = "Info",
+                Content = "Clear Report Enabled",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            KeceHub:MakeNotification({
+                Name = "Info",
+                Content = "Clear Report Disabled",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+-- Buttons
 FreeTab:AddButton({
     Name = "COKKA HUB NO KEY",
     Callback = function()
@@ -39,45 +111,16 @@ FreeTab:AddButton({
     end
 })
 
--- Tab: Script (Premium)
-local PremiumTab = Window:MakeTab({
-    Name = "Script (Premium)",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-PremiumTab:AddButton({
-    Name = "Azure HUB (PREM)",
+FreeTab:AddButton({
+    Name = "Auto Chest",
     Callback = function()
-        script_key = "DZBfAwjroFfqrzkvGMhzSiLxIiPcTAhD"
-        getgenv().Team = "Pirates"
-        getgenv().FixCrash = false
-        getgenv().FixCrash2 = false
-        loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/VGB-VGB-VGB/-VGB-Chest-Farm--/refs/heads/main/ChestFarmByVGBTeam"))()
     end
 })
 
-PremiumTab:AddButton({
-    Name = "Banana HUB (PREM)",
-    Callback = function()
-        repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
-        getgenv().Key = "95af14f32c213c968f476784"
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-    end
-})
-
-PremiumTab:AddButton({
-    Name = "MARU HUB (PREM)",
-    Callback = function()
-        getgenv().Key = "MARU-DGRS4-KHYB-4UQ9S-ACWZ-ATS9X"
-        getgenv().id = "1098577806398607432"
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/xshiba/MaruBitkub/main/Mobile.lua"))()
-    end
-})
-
--- Tab: Server
+-- Tab: Join Server
 local ServerTab = Window:MakeTab({
-    Name = "Server",
+    Name = "Join Server",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
@@ -87,72 +130,15 @@ local jobID = ""
 ServerTab:AddTextbox({
     Name = "Input Job ID",
     Default = "",
-    TextDisappear = false,
+    TextDisappear = true,
     Callback = function(value)
-        jobID = value:gsub("`", "") -- Filter backtick character
-        writefile("SavedJobID.txt", jobID) -- Auto-save Job ID
-    end
-})
-
-ServerTab:AddButton({
-    Name = "Join Job ID",
-    Callback = function()
+        -- Hapus backtick dari input dan simpan Job ID
+        jobID = value:gsub("`", "")
         if jobID ~= "" then
             game:GetService("ReplicatedStorage").__ServerBrowser:InvokeServer("teleport", jobID)
-        else
-            OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "Please input a valid Job ID!",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
         end
     end
 })
-
-ServerTab:AddToggle({
-    Name = "Auto Join Job",
-    Default = false,
-    Callback = function(value)
-        if value and jobID ~= "" then
-            while value do
-                game:GetService("ReplicatedStorage").__ServerBrowser:InvokeServer("teleport", jobID)
-                task.wait(1) -- Prevent spamming
-            end
-        end
-    end
-})
-
-ServerTab:AddButton({
-    Name = "Hop to Less Player Server",
-    Callback = function()
-        local servers = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-        for _, server in ipairs(servers.data) do
-            if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, server.id)
-                break
-            end
-        end
-    end
-})
-
-ServerTab:AddButton({
-    Name = "Hop to Random Server",
-    Callback = function()
-        local servers = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-        for _, server in ipairs(servers.data) do
-            if server.id ~= game.JobId then
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, server.id)
-                break
-            end
-        end
-    end
-})
-
--- Load Saved Job ID if Available
-if isfile("SavedJobID.txt") then
-    jobID = readfile("SavedJobID.txt")
-end
 
 -- Initialize UI
-OrionLib:Init()
+KeceHub:Init()
