@@ -1,4 +1,4 @@
--- Load KeceHub Lib
+-- Load KeceHub Library
 local KeceHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
 -- Main Window
@@ -9,6 +9,10 @@ local Window = KeceHub:MakeWindow({
     ConfigFolder = "KeceHubV2"
 })
 
+-- Variables
+local bypassStatus = false
+local startTime = os.clock()
+
 -- Tab: Status
 local StatusTab = Window:MakeTab({
     Name = "Status",
@@ -16,79 +20,62 @@ local StatusTab = Window:MakeTab({
     PremiumOnly = false
 })
 
-local startTime = os.clock()
-
--- Update Status Info
+-- Status Display
 StatusTab:AddLabel("Name Display: " .. game.Players.LocalPlayer.DisplayName)
 StatusTab:AddLabel("Username: " .. game.Players.LocalPlayer.Name)
 StatusTab:AddLabel("Status SC: VIP (REAL)")
-StatusTab:AddLabel("Time Running: 0s")
-StatusTab:AddLabel("FPS: Calculating...")
+StatusTab:AddLabel("Ping: Calculating...")
+StatusTab:AddLabel("Bypass Status: OFF")
 
+-- Update Ping and Bypass Status
 task.spawn(function()
     while true do
-        local timeRunning = math.floor(os.clock() - startTime)
-        local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
-        StatusTab:UpdateLabel(3, "Time Running: " .. timeRunning .. "s")
-        StatusTab:UpdateLabel(4, "FPS: " .. fps)
+        -- Calculate Ping
+        local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+        -- Update Labels
+        StatusTab:UpdateLabel(3, "Ping: " .. ping)
+        StatusTab:UpdateLabel(4, "Bypass Status: " .. (bypassStatus and "ON" or "OFF"))
         task.wait(1)
     end
 end)
 
--- Tab: Script (Free) (Main)
-local FreeTab = Window:MakeTab({
-    Name = "Script (Free)",
+-- Tab: Main
+local MainTab = Window:MakeTab({
+    Name = "Main",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
 -- Toggles
-FreeTab:AddToggle({
+MainTab:AddToggle({
     Name = "Bypass ON/OFF",
     Default = false,
     Callback = function(value)
-        if value then
-            KeceHub:MakeNotification({
-                Name = "Info",
-                Content = "Bypass Enabled",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        else
-            KeceHub:MakeNotification({
-                Name = "Info",
-                Content = "Bypass Disabled",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        end
+        bypassStatus = value
+        KeceHub:MakeNotification({
+            Name = "Info",
+            Content = "Bypass " .. (value and "Enabled" or "Disabled"),
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
     end
 })
 
-FreeTab:AddToggle({
+MainTab:AddToggle({
     Name = "Clear Report ON/OFF",
     Default = false,
     Callback = function(value)
-        if value then
-            KeceHub:MakeNotification({
-                Name = "Info",
-                Content = "Clear Report Enabled",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        else
-            KeceHub:MakeNotification({
-                Name = "Info",
-                Content = "Clear Report Disabled",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        end
+        KeceHub:MakeNotification({
+            Name = "Info",
+            Content = "Clear Report " .. (value and "Enabled" or "Disabled"),
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
     end
 })
 
 -- Buttons
-FreeTab:AddButton({
+MainTab:AddButton({
     Name = "COKKA HUB NO KEY",
     Callback = function()
         _G.Key = "Xzt7M9IAfF"
@@ -96,14 +83,14 @@ FreeTab:AddButton({
     end
 })
 
-FreeTab:AddButton({
+MainTab:AddButton({
     Name = "RedzHub V2 (Smooth)",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/BloxFruits/refs/heads/main/Source.lua"))()
     end
 })
 
-FreeTab:AddButton({
+MainTab:AddButton({
     Name = "ANDEPZAI OP (TRIAL)",
     Callback = function()
         repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
@@ -111,7 +98,7 @@ FreeTab:AddButton({
     end
 })
 
-FreeTab:AddButton({
+MainTab:AddButton({
     Name = "Auto Chest",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/VGB-VGB-VGB/-VGB-Chest-Farm--/refs/heads/main/ChestFarmByVGBTeam"))()
@@ -132,7 +119,7 @@ ServerTab:AddTextbox({
     Default = "",
     TextDisappear = true,
     Callback = function(value)
-        -- Hapus backtick dari input dan simpan Job ID
+        -- Hapus karakter backtick dan simpan Job ID
         jobID = value:gsub("`", "")
         if jobID ~= "" then
             game:GetService("ReplicatedStorage").__ServerBrowser:InvokeServer("teleport", jobID)
