@@ -3,14 +3,16 @@ local KeceHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlex
 
 -- Main Window
 local Window = KeceHub:MakeWindow({
-    Name = "KECE HUB THE BEST",
+    Name = "KECE HUB V3",
     HidePremium = false,
     SaveConfig = true,
-    ConfigFolder = "KeceHubV2"
+    ConfigFolder = "KeceHubV3"
 })
 
 -- Variables
 local bypassStatus = false
+local clearLogStatus = false
+local reportStatus = false
 local startTime = os.clock()
 
 -- Tab: Status
@@ -25,7 +27,7 @@ StatusTab:AddLabel("STATUS SC: VIP")
 StatusTab:AddLabel("DEV: tiktok @lawwstore")
 StatusTab:AddLabel("INFO: Penjual SC ini hanya @lawwstore")
 
--- Update Ping and Bypass Status
+-- Update Ping and Status
 task.spawn(function()
     while true do
         task.wait(1) -- Interval pembaruan setiap 1 detik
@@ -55,12 +57,27 @@ MainTab:AddToggle({
 })
 
 MainTab:AddToggle({
-    Name = "Clear Report ON/OFF",
+    Name = "Clear Log ON/OFF",
     Default = false,
     Callback = function(value)
+        clearLogStatus = value
         KeceHub:MakeNotification({
             Name = "Info",
-            Content = "Clear Report " .. (value and "Enabled" or "Disabled"),
+            Content = "Clear Log " .. (value and "Enabled" or "Disabled"),
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+MainTab:AddToggle({
+    Name = "Anti Report ON/OFF",
+    Default = false,
+    Callback = function(value)
+        reportStatus = value
+        KeceHub:MakeNotification({
+            Name = "Info",
+            Content = "Anti Report " .. (value and "Enabled" or "Disabled"),
             Image = "rbxassetid://4483345998",
             Time = 5
         })
@@ -69,7 +86,7 @@ MainTab:AddToggle({
 
 -- Buttons
 MainTab:AddButton({
-    Name = "COKKA HUB NO KEY",
+    Name = "SCRIPT COKKA (CRACK)",
     Callback = function()
         _G.Key = "Xzt7M9IAfF"
         loadstring(game:HttpGet("https://raw.githubusercontent.com/UserDevEthical/Loadstring/main/CokkaHub.lua"))()
@@ -77,24 +94,9 @@ MainTab:AddButton({
 })
 
 MainTab:AddButton({
-    Name = "RedzHub V2 (Smooth)",
+    Name = "RedzHub FIXED",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/BloxFruits/refs/heads/main/Source.lua"))()
-    end
-})
-
-MainTab:AddButton({
-    Name = "ANDEPZAI OP (TRIAL)",
-    Callback = function()
-        repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/AnDepZaiHub/AnDepZaiHubBeta/refs/heads/main/AnDepZaiHubNewUpdated.lua"))()
-    end
-})
-
-MainTab:AddButton({
-    Name = "Auto Chest",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/VGB-VGB-VGB/-VGB-Chest-Farm--/refs/heads/main/ChestFarmByVGBTeam"))()
     end
 })
 
@@ -128,7 +130,7 @@ local notificationFrame = game:GetService("CoreGui"):FindFirstChild("Orion"):Fin
 if notificationFrame then
     for _, child in pairs(notificationFrame:GetChildren()) do
         if child.Name == "Welcome" then
-            child.Message.Text = "KECE HUB THE BEST"
+            child.Message.Text = "KECE HUB V3"
         end
     end
 end
