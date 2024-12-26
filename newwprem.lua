@@ -11,10 +11,7 @@ local Window = KeceHub:MakeWindow({
 
 -- Variables
 local bypassStatus = false
-local clearLogStatus = false
-local reportStatus = false
 local startTime = os.clock()
-local savedKey = ""
 
 -- Tab: Status
 local StatusTab = Window:MakeTab({
@@ -28,7 +25,7 @@ StatusTab:AddLabel("STATUS SC: VIP")
 StatusTab:AddLabel("DEV: tiktok @lawwstore")
 StatusTab:AddLabel("INFO: Penjual SC ini hanya @lawwstore")
 
--- Update Ping and Status
+-- Update Ping and Bypass Status
 task.spawn(function()
     while true do
         task.wait(1) -- Interval pembaruan setiap 1 detik
@@ -58,13 +55,12 @@ MainTab:AddToggle({
 })
 
 MainTab:AddToggle({
-    Name = "Clear Log ON/OFF",
+    Name = "Clear Report",
     Default = false,
     Callback = function(value)
-        clearLogStatus = value
         KeceHub:MakeNotification({
             Name = "Info",
-            Content = "Clear Log " .. (value and "Enabled" or "Disabled"),
+            Content = "Clear Report " .. (value and "Enabled" or "Disabled"),
             Image = "rbxassetid://4483345998",
             Time = 5
         })
@@ -72,13 +68,12 @@ MainTab:AddToggle({
 })
 
 MainTab:AddToggle({
-    Name = "Fake Report ON/OFF",
+    Name = "Anti Report",
     Default = false,
     Callback = function(value)
-        reportStatus = value
         KeceHub:MakeNotification({
             Name = "Info",
-            Content = "Fake Report " .. (value and "Enabled" or "Disabled"),
+            Content = "Anti Report " .. (value and "Enabled" or "Disabled"),
             Image = "rbxassetid://4483345998",
             Time = 5
         })
@@ -95,9 +90,23 @@ MainTab:AddButton({
 })
 
 MainTab:AddButton({
+    Name = "Speed Hub",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua", true))()
+    end
+})
+
+MainTab:AddButton({
     Name = "RedzHub V2 (Smooth)",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/BloxFruits/refs/heads/main/Source.lua"))()
+    end
+})
+
+MainTab:AddButton({
+    Name = "Mokuro Hub",
+    Callback = function()
+        loadstring(game:HttpGet("https://auth.quartyz.com/scripts/Loader.lua"))()
     end
 })
 
@@ -135,23 +144,25 @@ SpecialTab:AddButton({
     Callback = function()
         setclipboard("https://ads.luarmor.net/get_key?for=VHFslhWdrPey")
         KeceHub:MakeNotification({
-            Name = "Key Copied",
-            Content = "Key link has been copied to clipboard!",
+            Name = "Info",
+            Content = "Key URL copied to clipboard!",
             Image = "rbxassetid://4483345998",
             Time = 5
         })
     end
 })
 
+local userKey = ""
 SpecialTab:AddTextbox({
     Name = "Input Key",
     Default = "",
     TextDisappear = false,
     Callback = function(value)
-        savedKey = value
+        userKey = value
+        writefile("KeceHubKey.txt", userKey)
         KeceHub:MakeNotification({
-            Name = "Key Saved",
-            Content = "Key has been saved!",
+            Name = "Info",
+            Content = "Key saved successfully!",
             Image = "rbxassetid://4483345998",
             Time = 5
         })
@@ -161,7 +172,7 @@ SpecialTab:AddTextbox({
 SpecialTab:AddButton({
     Name = "Start",
     Callback = function()
-        if savedKey == "" then
+        if userKey == "" then
             KeceHub:MakeNotification({
                 Name = "Error",
                 Content = "Please input a key first!",
@@ -169,7 +180,7 @@ SpecialTab:AddButton({
                 Time = 5
             })
         else
-            getgenv().Key = savedKey
+            getgenv().Key = userKey
             loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
         end
     end
