@@ -3,7 +3,7 @@ local KeceHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlex
 
 -- Main Window
 local Window = KeceHub:MakeWindow({
-    Name = "Kece Hub Nih Boss RAWRRRRRRRRRRRR",
+    Name = "True V4",
     HidePremium = false,
     SaveConfig = true,
     ConfigFolder = "KeceHubV2"
