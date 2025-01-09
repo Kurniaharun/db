@@ -4,7 +4,7 @@ local KeceHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlex
 -- Variables
 local keyValid = false
 local userKey = ""
-local requiredKey ="alokhamil"
+local requiredKey = "alokhamil"
 
 -- Key Input Window
 local KeyWindow = KeceHub:MakeWindow({
