@@ -67,19 +67,6 @@ MainTab:AddToggle({
     end
 })
 
-MainTab:AddToggle({
-    Name = "Clear Log",
-    Default = false,
-    Callback = function(value)
-        KeceHub:MakeNotification({
-            Name = "Info",
-            Content = "Clear Log " .. (value and "Enabled" or "Disabled"),
-            Image = "rbxassetid://4483345998",
-            Time = 5
-        })
-    end
-})
-
 -- Buttons
 MainTab:AddButton({
     Name = "COKKA HUB NO KEY",
@@ -97,26 +84,20 @@ MainTab:AddButton({
 })
 
 MainTab:AddButton({
-    Name = "RedzHub V2 (Smooth)",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/BloxFruits/refs/heads/main/Source.lua"))()
-    end
-})
-
-MainTab:AddButton({
     Name = "Mokuro Hub",
     Callback = function()
         loadstring(game:HttpGet("https://auth.quartyz.com/scripts/Loader.lua"))()
     end
 })
 
--- Tab: BANANA
+-- Tab: Banana
 local BananaTab = Window:MakeTab({
-    Name = "BANANA",
+    Name = "Banana",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
+-- Banana Features
 BananaTab:AddButton({
     Name = "Get Key",
     Callback = function()
@@ -135,22 +116,15 @@ BananaTab:AddTextbox({
     Default = "",
     TextDisappear = true,
     Callback = function(value)
-        _G.Key = value
-        KeceHub:MakeNotification({
-            Name = "Info",
-            Content = "Key Saved!",
-            Image = "rbxassetid://4483345998",
-            Time = 5
-        })
+        getgenv().Key = value
     end
 })
 
 BananaTab:AddButton({
     Name = "Start",
     Callback = function()
-        if _G.Key and _G.Key ~= "" then
+        if getgenv().Key then
             repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
-            getgenv().Key = _G.Key
             loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
         else
             KeceHub:MakeNotification({
@@ -163,9 +137,9 @@ BananaTab:AddButton({
     end
 })
 
--- Tab: ALCHEMY
+-- Tab: Alchemy
 local AlchemyTab = Window:MakeTab({
-    Name = "ALCHEMY",
+    Name = "Alchemy",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
@@ -177,9 +151,9 @@ AlchemyTab:AddButton({
     end
 })
 
--- Tab: KAITUN
+-- Tab: Kaitun
 local KaitunTab = Window:MakeTab({
-    Name = "KAITUN",
+    Name = "Kaitun",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
@@ -188,6 +162,27 @@ KaitunTab:AddButton({
     Name = "Start Kaitun",
     Callback = function()
         loadstring(game:HttpGet("https://pastebin.com/raw/ZMsXgHhF"))()
+    end
+})
+
+-- Tab: Join Server
+local ServerTab = Window:MakeTab({
+    Name = "Join Server",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local jobID = ""
+
+ServerTab:AddTextbox({
+    Name = "Input Job ID",
+    Default = "",
+    TextDisappear = true,
+    Callback = function(value)
+        jobID = value:gsub("`", "")
+        if jobID ~= "" then
+            game:GetService("ReplicatedStorage").__ServerBrowser:InvokeServer("teleport", jobID)
+        end
     end
 })
 
