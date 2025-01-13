@@ -69,9 +69,8 @@ MainTab:AddToggle({
 
 -- Buttons
 MainTab:AddButton({
-    Name = "COKKA HUB NO KEY",
+    Name = "COKKA HUB",
     Callback = function()
-        _G.Key = "Xzt7M9IAfF"
         loadstring(game:HttpGet("https://raw.githubusercontent.com/UserDevEthical/Loadstring/main/CokkaHub.lua"))()
     end
 })
