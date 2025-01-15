@@ -1,11 +1,23 @@
+-- Load Orion Library
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+
+-- Main Window
+local Window = OrionLib:MakeWindow({
+    Name = "KECE HUB V5",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "KeceHubConfig"
+})
+
+-- Variables
+local jobID = ""
+
 -- Tab: Join Server
 local ServerTab = Window:MakeTab({
     Name = "Join Server",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-
-local jobID = ""
 
 -- Input Job ID
 ServerTab:AddTextbox({
@@ -14,21 +26,12 @@ ServerTab:AddTextbox({
     TextDisappear = true,
     Callback = function(value)
         jobID = value:gsub("`", "") -- Hapus karakter backtick
-        if jobID ~= "" then
-            KeceHub:MakeNotification({
-                Name = "Job ID Set",
-                Content = "Job ID berhasil disimpan!",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        else
-            KeceHub:MakeNotification({
-                Name = "Error",
-                Content = "Job ID tidak boleh kosong!",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        end
+        OrionLib:MakeNotification({
+            Name = "Job ID Set",
+            Content = jobID ~= "" and "Job ID berhasil disimpan!" or "Job ID tidak boleh kosong!",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
     end
 })
 
@@ -37,7 +40,7 @@ ServerTab:AddButton({
     Name = "Join Server",
     Callback = function()
         if jobID == "" then
-            KeceHub:MakeNotification({
+            OrionLib:MakeNotification({
                 Name = "Error",
                 Content = "Masukkan Job ID terlebih dahulu!",
                 Image = "rbxassetid://4483345998",
@@ -51,14 +54,14 @@ ServerTab:AddButton({
         end)
 
         if success then
-            KeceHub:MakeNotification({
+            OrionLib:MakeNotification({
                 Name = "Success",
                 Content = "Berhasil bergabung ke server!",
                 Image = "rbxassetid://4483345998",
                 Time = 5
             })
         else
-            KeceHub:MakeNotification({
+            OrionLib:MakeNotification({
                 Name = "Error",
                 Content = "Gagal bergabung ke server! Periksa Job ID.",
                 Image = "rbxassetid://4483345998",
@@ -73,7 +76,7 @@ ServerTab:AddButton({
     Name = "Clear Job ID",
     Callback = function()
         jobID = ""
-        KeceHub:MakeNotification({
+        OrionLib:MakeNotification({
             Name = "Cleared",
             Content = "Job ID telah dihapus!",
             Image = "rbxassetid://4483345998",
@@ -81,3 +84,16 @@ ServerTab:AddButton({
         })
     end
 })
+
+-- Initialize Orion
+OrionLib:Init()
+
+-- Welcome Message Override
+local notificationFrame = game:GetService("CoreGui"):FindFirstChild("Orion"):FindFirstChild("Notifications")
+if notificationFrame then
+    for _, child in pairs(notificationFrame:GetChildren()) do
+        if child.Name == "Welcome" then
+            child.Message.Text = "KECE HUB V5 - Welcome!"
+        end
+    end
+end
