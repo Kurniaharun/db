@@ -1,2 +1,126 @@
-laww 10-10-9999
-test 9-8-2024
+-- Tab: Join Server
+local ServerTab = Window:MakeTab({
+    Name = "Join Server",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local jobID = ""
+local retryCount = 0
+local maxRetries = 3
+
+-- Input Job ID
+ServerTab:AddTextbox({
+    Name = "Input Job ID",
+    Default = "",
+    TextDisappear = true,
+    Callback = function(value)
+        jobID = value:gsub("`", "") -- Hapus karakter backtick
+        if jobID ~= "" then
+            KeceHub:MakeNotification({
+                Name = "Job ID Set",
+                Content = "Job ID berhasil disimpan!",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            KeceHub:MakeNotification({
+                Name = "Error",
+                Content = "Job ID tidak boleh kosong!",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+-- Display Server Info
+ServerTab:AddButton({
+    Name = "Check Server Info",
+    Callback = function()
+        if jobID == "" then
+            KeceHub:MakeNotification({
+                Name = "Error",
+                Content = "Masukkan Job ID terlebih dahulu!",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+            return
+        end
+
+        -- Ganti ini dengan fungsi untuk mendapatkan informasi server jika API tersedia
+        KeceHub:MakeNotification({
+            Name = "Server Info",
+            Content = "Server: Example Server\nPlayers: 15/20",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+-- Join Server
+ServerTab:AddButton({
+    Name = "Join Server",
+    Callback = function()
+        if jobID == "" then
+            KeceHub:MakeNotification({
+                Name = "Error",
+                Content = "Masukkan Job ID terlebih dahulu!",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+            return
+        end
+
+        local function joinServer()
+            local success, err = pcall(function()
+                game:GetService("ReplicatedStorage").__ServerBrowser:InvokeServer("teleport", jobID)
+            end)
+
+            if success then
+                KeceHub:MakeNotification({
+                    Name = "Success",
+                    Content = "Berhasil bergabung ke server!",
+                    Image = "rbxassetid://4483345998",
+                    Time = 5
+                })
+                retryCount = 0
+            else
+                retryCount = retryCount + 1
+                if retryCount <= maxRetries then
+                    KeceHub:MakeNotification({
+                        Name = "Retry",
+                        Content = "Gagal bergabung, mencoba kembali (" .. retryCount .. "/" .. maxRetries .. ")",
+                        Image = "rbxassetid://4483345998",
+                        Time = 5
+                    })
+                    joinServer()
+                else
+                    KeceHub:MakeNotification({
+                        Name = "Error",
+                        Content = "Gagal bergabung ke server setelah " .. maxRetries .. " percobaan!",
+                        Image = "rbxassetid://4483345998",
+                        Time = 5
+                    })
+                    retryCount = 0
+                end
+            end
+        end
+
+        joinServer()
+    end
+})
+
+-- Clear Job ID
+ServerTab:AddButton({
+    Name = "Clear Job ID",
+    Callback = function()
+        jobID = ""
+        KeceHub:MakeNotification({
+            Name = "Cleared",
+            Content = "Job ID telah dihapus!",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
