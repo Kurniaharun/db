@@ -1,199 +1,156 @@
--- Load KeceHub Library
-local KeceHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local MinimizeButton = Instance.new("TextButton")
+local CloseButton = Instance.new("TextButton")
+local OpenButton = Instance.new("TextButton")
+local StatusTabButton = Instance.new("TextButton")
+local FeaturesTabButton = Instance.new("TextButton")
 
--- Main Window
-local Window = KeceHub:MakeWindow({
-    Name = "KECE HUB V5",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "KeceHubV5"
-})
+local StatusFrame = Instance.new("Frame")
+local FeaturesFrame = Instance.new("Frame")
 
--- Variables
-local bypassStatus = false
-local startTime = os.clock()
+-- Properties
+ScreenGui.Parent = game.CoreGui
 
--- Tab: Status
-local StatusTab = Window:MakeTab({
-    Name = "Status",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 400, 0, 300)
+MainFrame.Visible = true
+MainFrame.Draggable = true
+MainFrame.Active = true
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.BackgroundTransparency = 0.2
 
--- Status Display
-StatusTab:AddLabel("STATUS SC: VIP")
-StatusTab:AddLabel("DEV: tiktok @lawwstore")
-StatusTab:AddLabel("INFO: Penjual SC ini hanya @lawwstore")
+TitleLabel.Parent = MainFrame
+TitleLabel.Size = UDim2.new(1, 0, 0, 50)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Text = "KECE HUB V5"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 24
+TitleLabel.BackgroundTransparency = 1
 
--- Update Ping and Bypass Status
-task.spawn(function()
-    while true do
-        task.wait(1) -- Interval pembaruan setiap 1 detik
-    end
+MinimizeButton.Parent = MainFrame
+MinimizeButton.Position = UDim2.new(0, 340, 0, 10)
+MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.BackgroundTransparency = 0.5
+MinimizeButton.BorderSizePixel = 0
+
+CloseButton.Parent = MainFrame
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+CloseButton.Position = UDim2.new(0, 370, 0, 10)
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.BorderSizePixel = 0
+CloseButton.BackgroundTransparency = 0.5
+
+OpenButton.Parent = ScreenGui
+OpenButton.Position = UDim2.new(0.3, 0, 0.3, 0)
+OpenButton.Size = UDim2.new(0, 100, 0, 50)
+OpenButton.Text = "Open"
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.Visible = false
+OpenButton.Draggable = true
+OpenButton.BackgroundTransparency = 0.5
+
+StatusTabButton.Parent = MainFrame
+StatusTabButton.Position = UDim2.new(0, 0, 0, 50)
+StatusTabButton.Size = UDim2.new(0.5, 0, 0, 30)
+StatusTabButton.Text = "Status"
+StatusTabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusTabButton.BackgroundTransparency = 0.5
+
+FeaturesTabButton.Parent = MainFrame
+FeaturesTabButton.Position = UDim2.new(0.5, 0, 0, 50)
+FeaturesTabButton.Size = UDim2.new(0.5, 0, 0, 30)
+FeaturesTabButton.Text = "Features"
+FeaturesTabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FeaturesTabButton.BackgroundTransparency = 0.5
+
+StatusFrame.Parent = MainFrame
+StatusFrame.Position = UDim2.new(0, 0, 0, 80)
+StatusFrame.Size = UDim2.new(1, 0, 1, -80)
+StatusFrame.Visible = true
+
+FeaturesFrame.Parent = MainFrame
+FeaturesFrame.Position = UDim2.new(0, 0, 0, 80)
+FeaturesFrame.Size = UDim2.new(1, 0, 1, -80)
+FeaturesFrame.Visible = false
+
+-- Animations
+MinimizeButton.MouseButton1Click:Connect(function()
+    MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.5, true, function()
+        MainFrame.Visible = false
+        OpenButton.Visible = true
+    end)
 end)
 
--- Tab: Main
-local MainTab = Window:MakeTab({
-    Name = "Main",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
 
--- Toggles
-MainTab:AddToggle({
-    Name = "Bypass ON/OFF",
-    Default = false,
-    Callback = function(value)
-        bypassStatus = value
-        KeceHub:MakeNotification({
-            Name = "Info",
-            Content = "Bypass " .. (value and "Enabled" or "Disabled"),
-            Image = "rbxassetid://4483345998",
-            Time = 5
-        })
-    end
-})
+OpenButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    MainFrame:TweenSize(UDim2.new(0, 400, 0, 300), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.5, true)
+    OpenButton.Visible = false
+end)
 
-MainTab:AddToggle({
-    Name = "Anti Report",
-    Default = false,
-    Callback = function(value)
-        KeceHub:MakeNotification({
-            Name = "Info",
-            Content = "Anti Report " .. (value and "Enabled" or "Disabled"),
-            Image = "rbxassetid://4483345998",
-            Time = 5
-        })
-    end
-})
+StatusTabButton.MouseButton1Click:Connect(function()
+    StatusFrame.Visible = true
+    FeaturesFrame.Visible = false
+end)
 
--- Buttons
-MainTab:AddButton({
-    Name = "COKKA HUB",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/UserDevEthical/Loadstring/main/CokkaHub.lua"))()
-    end
-})
+FeaturesTabButton.MouseButton1Click:Connect(function()
+    StatusFrame.Visible = false
+    FeaturesFrame.Visible = true
+end)
 
-MainTab:AddButton({
-    Name = "Speed Hub",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua", true))()
-    end
-})
+-- Status Labels
+local StatusLabels = {"STATUS SC: VIP", "DEV: tiktok @lawwonlyone", "INFO: Penjual SC ini hanya @lawwonlyone"}
+for i, label in ipairs(StatusLabels) do
+    local StatusLabel = Instance.new("TextLabel")
+    StatusLabel.Parent = StatusFrame
+    StatusLabel.Position = UDim2.new(0, 10, 0, (i - 1) * 30)
+    StatusLabel.Size = UDim2.new(1, -20, 0, 30)
+    StatusLabel.Text = label
+    StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StatusLabel.BackgroundTransparency = 1
+end
 
-MainTab:AddButton({
-    Name = "Mokuro Hub",
-    Callback = function()
-        loadstring(game:HttpGet("https://auth.quartyz.com/scripts/Loader.lua"))()
-    end
-})
+-- Features Buttons
+local FeatureButtons = {
+    {Name = "Redz Hub", URL = "https://raw.githubusercontent.com/realredz/BloxFruits/refs/heads/main/Source.lua"},
+    {Name = "COKKA HUB", URL = "https://raw.githubusercontent.com/UserDevEthical/Loadstring/main/CokkaHub.lua"},
+    {Name = "Speed Hub", URL = "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"},
+    {Name = "Mokuro Hub", URL = "https://auth.quartyz.com/scripts/Loader.lua"},
+    {
+        Name = "W Azure",
+        URL = [[
+            getgenv().Team = "Pirates"
+            getgenv().AutoLoad = false -- Will Load Script On Server Hop
+            getgenv().SlowLoadUi = false
+            getgenv().ForceUseSilentAimDashModifier = false -- Force turn on silent aim, if error then executor problem
+            getgenv().ForceUseWalkSpeedModifier = false -- Force turn on Walk Speed Modifier, if error then executor problem
+            loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"))()
+        ]]
+    }
+}
 
--- Tab: Banana
-local BananaTab = Window:MakeTab({
-    Name = "Banana",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
--- Banana Features
-BananaTab:AddButton({
-    Name = "Get Key",
-    Callback = function()
-        setclipboard("https://ads.luarmor.net/get_key?for=VHFslhWdrPey")
-        KeceHub:MakeNotification({
-            Name = "Info",
-            Content = "Key URL copied to clipboard!",
-            Image = "rbxassetid://4483345998",
-            Time = 5
-        })
-    end
-})
-
-BananaTab:AddTextbox({
-    Name = "Input Key",
-    Default = "",
-    TextDisappear = true,
-    Callback = function(value)
-        getgenv().Key = value
-    end
-})
-
-BananaTab:AddButton({
-    Name = "Start",
-    Callback = function()
-        if getgenv().Key then
-            repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-        else
-            KeceHub:MakeNotification({
-                Name = "Error",
-                Content = "Please input a valid key!",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        end
-    end
-})
-
--- Tab: Alchemy
-local AlchemyTab = Window:MakeTab({
-    Name = "Alchemy",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-AlchemyTab:AddButton({
-    Name = "Start",
-    Callback = function()
-        loadstring(game:HttpGet("https://scripts.alchemyhub.xyz"))()
-    end
-})
-
--- Tab: Kaitun
-local KaitunTab = Window:MakeTab({
-    Name = "Kaitun",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-KaitunTab:AddButton({
-    Name = "Start Kaitun",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/ZMsXgHhF"))()
-    end
-})
-
--- Tab: Join Server
-local ServerTab = Window:MakeTab({
-    Name = "Join Server",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local jobID = ""
-
-ServerTab:AddTextbox({
-    Name = "Input Job ID",
-    Default = "",
-    TextDisappear = true,
-    Callback = function(value)
-        jobID = value:gsub("`", "")
-        if jobID ~= "" then
-            game:GetService("ReplicatedStorage").__ServerBrowser:InvokeServer("teleport", jobID)
-        end
-    end
-})
-
--- Initialize UI
-KeceHub:Init()
-
--- Override Welcome Message
-local notificationFrame = game:GetService("CoreGui"):FindFirstChild("Orion"):FindFirstChild("Notifications")
-if notificationFrame then
-    for _, child in pairs(notificationFrame:GetChildren()) do
-        if child.Name == "Welcome" then
-            child.Message.Text = "KECE HUB V5"
-        end
-    end
+for i, feature in ipairs(FeatureButtons) do
+    local FeatureButton = Instance.new("TextButton")
+    FeatureButton.Parent = FeaturesFrame
+    FeatureButton.Position = UDim2.new(0, 10, 0, 10 + (i - 1) * 40)
+    FeatureButton.Size = UDim2.new(0.9, 0, 0, 30)
+    FeatureButton.Text = feature.Name
+    FeatureButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    FeatureButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    FeatureButton.BorderSizePixel = 0
+    FeatureButton.MouseButton1Click:Connect(function()
+        loadstring(game:HttpGet(feature.URL))()
+    end)
 end
