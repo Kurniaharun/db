@@ -1,0 +1,85 @@
+-- Services
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Worm Positions
+local wormLocations = {
+    Vector3.new(262.67, 12.36, 104.97),
+    Vector3.new(248.63, 13.34, 103.06),
+    Vector3.new(236.19, 13.44, 104.44)
+}
+
+-- UI Setup
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+ScreenGui.Name = "AutoWormUI"
+ScreenGui.ResetOnSpawn = false
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 40)  -- Ukuran lebih kecil
+Frame.Position = UDim2.new(0.5, -100, 0, 10)  -- Posisikan di topbar
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+
+local ToggleBtn = Instance.new("TextButton", Frame)
+ToggleBtn.Size = UDim2.new(1, 0, 1, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Text = "Auto Worm: OFF"
+ToggleBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 14  -- Ukuran teks lebih kecil
+
+-- Tombol Rejoin
+local RejoinBtn = Instance.new("TextButton", Frame)
+RejoinBtn.Size = UDim2.new(0, 60, 1, 0)  -- Ukuran tombol kecil
+RejoinBtn.Position = UDim2.new(1, -60, 0, 0)  -- Posisikan di sebelah kanan tombol Toggle
+RejoinBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Warna hijau
+RejoinBtn.Text = "Rejoin"
+RejoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+RejoinBtn.Font = Enum.Font.GothamBold
+RejoinBtn.TextSize = 12  -- Ukuran teks tombol rejoin lebih kecil
+
+-- AutoWorm Logic
+local isActive = false
+
+local function teleportTo(pos)
+    local tween = TweenService:Create(humanoidRootPart, TweenInfo.new(0.5), {CFrame = CFrame.new(pos)})
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+local function holdE(duration)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(duration)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+-- Toggle Button Logic
+ToggleBtn.MouseButton1Click:Connect(function()
+    isActive = not isActive
+    ToggleBtn.Text = "Auto Worm: " .. (isActive and "ON" or "OFF")
+
+    if isActive then
+        task.spawn(function()
+            while isActive do
+                for _, pos in ipairs(wormLocations) do
+                    teleportTo(pos)
+                    task.wait(0.5)
+                    holdE(2.25)
+                    task.wait(0.5)
+                end
+            end
+        end)
+    end
+end)
+
+-- Tombol Rejoin Logic
+RejoinBtn.MouseButton1Click:Connect(function()
+    TeleportService:Teleport(game.PlaceId, player)  -- Rejoin ke tempat yang sama
+end)
