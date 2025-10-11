@@ -1,0 +1,55 @@
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Auto-set Supabase credentials (fallback jika env tidak ada)
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://xyvbbguhmqcrvqumvddc.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dmJiZ3VobXFjcnZxdW12ZGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxODExNDAsImV4cCI6MjA3NTc1NzE0MH0.J_f_5WAJdb6A2k05kSUuQCS3iSo56pMR9omOnxie4vU';
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+// Serve static files
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// API endpoint untuk mendapatkan konfigurasi Supabase
+app.get('/api/config', (req, res) => {
+    const config = {
+        supabaseUrl: SUPABASE_URL,
+        supabaseKey: SUPABASE_ANON_KEY
+    };
+    
+    res.json(config);
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`🚀 Server berjalan di port ${PORT}`);
+    console.log(`📱 Buka http://localhost:${PORT} untuk mengakses aplikasi`);
+    
+    // Cek environment variables
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+        console.log('🔧 Menggunakan konfigurasi default Supabase');
+        console.log('📝 URL:', SUPABASE_URL);
+        console.log('🔑 Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+    } else {
+        console.log('✅ Menggunakan environment variables dari Heroku');
+    }
+});
