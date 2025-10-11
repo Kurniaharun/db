@@ -30,7 +30,7 @@ app.get('/api/config', (req, res) => {
     res.json(config);
 });
 
-// Raw endpoint untuk menampilkan username per line (seperti raw.githubusercontent.com)
+// Raw endpoint untuk menampilkan username dalam format JSON
 app.get('/raw', async (req, res) => {
     try {
         // Import Supabase client
@@ -44,21 +44,28 @@ app.get('/raw', async (req, res) => {
             .order('username');
 
         if (error) {
-            return res.status(500).send(`Error: ${error.message}`);
+            return res.status(500).json({
+                error: error.message
+            });
         }
 
-        // Format username per line
-        const usernames = data.map(item => item.username).join('\n');
+        // Format username dalam JSON
+        const usernames = data.map(item => item.username);
+        const jsonResponse = {
+            whitelist: usernames
+        };
         
-        // Set header untuk raw text
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        // Set header untuk JSON
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.setHeader('Cache-Control', 'no-cache');
         
-        // Kirim response
-        res.send(usernames || '');
+        // Kirim response dengan pretty print
+        res.send(JSON.stringify(jsonResponse, null, 2));
         
     } catch (error) {
-        res.status(500).send(`Error: ${error.message}`);
+        res.status(500).json({
+            error: error.message
+        });
     }
 });
 

@@ -481,23 +481,29 @@
                 if (error) {
                     showResult('❌ Gagal mengambil data whitelist: ' + error.message, 'error');
                 } else {
-                    const usernames = data.map(item => item.username).join('\n');
+                    // Format JSON response
+                    const usernames = data.map(item => item.username);
+                    const jsonResponse = {
+                        whitelist: usernames
+                    };
+                    const jsonString = JSON.stringify(jsonResponse, null, 2);
+                    
                     const resultDiv = document.getElementById('result');
                     
-                    if (usernames) {
+                    if (usernames.length > 0) {
                         // Dapatkan base URL
                         const baseUrl = window.location.origin;
                         const rawUrl = `${baseUrl}/raw`;
                         
                         resultDiv.innerHTML = `
                             <div class="result success">✅ Raw Link Whitelist (${data.length} users):</div>
-                            <div class="raw-output">${usernames}</div>
+                            <div class="raw-output">${jsonString}</div>
                             <div style="margin-top: 15px;">
-                                <div class="result info">🔗 Raw URL (bisa dibuka di browser):</div>
+                                <div class="result info">🔗 Raw JSON URL (bisa dibuka di browser):</div>
                                 <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; word-break: break-all;">
                                     <a href="${rawUrl}" target="_blank" style="color: #007bff; text-decoration: none;">${rawUrl}</a>
                                 </div>
-                                <button class="btn btn-add" onclick="copyToClipboard()" style="margin-right: 10px;">📋 Copy Usernames</button>
+                                <button class="btn btn-add" onclick="copyToClipboard()" style="margin-right: 10px;">📋 Copy JSON</button>
                                 <button class="btn btn-check" onclick="copyRawUrl()">🔗 Copy Raw URL</button>
                             </div>
                         `;
@@ -517,7 +523,7 @@
             const text = rawOutput.textContent;
             
             navigator.clipboard.writeText(text).then(() => {
-                showResult('✅ Usernames berhasil disalin ke clipboard!', 'success');
+                showResult('✅ JSON berhasil disalin ke clipboard!', 'success');
             }).catch(() => {
                 showResult('❌ Gagal menyalin ke clipboard!', 'error');
             });
