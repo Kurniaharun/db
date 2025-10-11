@@ -29,6 +29,9 @@ local function createWhitelistUI()
     blurEffect.Size = 20
     blurEffect.Parent = game.Lighting
     
+    -- Store blur effect reference untuk cleanup
+    _G.WhitelistBlurEffect = blurEffect
+    
     -- Frame utama dengan gradient
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
@@ -302,12 +305,31 @@ local function updateStatus(statusLabel, contactFrame, isWhitelisted)
         -- Auto cleanup setelah 3 detik jika whitelisted
         spawn(function()
             wait(3)
-            -- Fade out animation
+            
+            -- Cleanup blur effect dulu
+            if _G.WhitelistBlurEffect then
+                _G.WhitelistBlurEffect:Destroy()
+                _G.WhitelistBlurEffect = nil
+            end
+            
+            -- Fade out animation untuk semua elemen UI
+            local mainFrame = statusLabel.Parent.Parent
             local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-            local fadeOut = TweenService:Create(statusLabel.Parent.Parent, tweenInfo, {BackgroundTransparency = 1})
+            
+            -- Fade out main frame
+            local fadeOut = TweenService:Create(mainFrame, tweenInfo, {BackgroundTransparency = 1})
             fadeOut:Play()
+            
+            -- Fade out semua child elements
+            for _, child in pairs(mainFrame:GetDescendants()) do
+                if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("Frame") then
+                    local childFade = TweenService:Create(child, tweenInfo, {BackgroundTransparency = 1, TextTransparency = 1})
+                    childFade:Play()
+                end
+            end
+            
             fadeOut.Completed:Connect(function()
-                statusLabel.Parent.Parent:Destroy() -- Destroy UI
+                mainFrame:Destroy() -- Destroy UI
                 WhitelistEnv.onWhitelisted() -- Call callback
             end)
         end)
@@ -374,13 +396,19 @@ end
 WhitelistEnv.onWhitelisted = function()
     print("✅ Whitelist check passed! Loading next script...")
     
-    -- Cleanup blur effect
-    if game.Lighting:FindFirstChild("BlurEffect") then
-        game.Lighting.BlurEffect:Destroy()
+    -- Double cleanup blur effect (backup)
+    if _G.WhitelistBlurEffect then
+        _G.WhitelistBlurEffect:Destroy()
+        _G.WhitelistBlurEffect = nil
+    end
+    
+    -- Cleanup any remaining UI elements
+    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+    if playerGui:FindFirstChild("WhitelistLib") then
+        playerGui.WhitelistLib:Destroy()
     end
     
     -- Script akan otomatis load script selanjutnya dari URL
-    -- URL bisa di-set di bagian atas script
     if _G.NextScriptURL then
         local success, result = pcall(function()
             return game:HttpGet(_G.NextScriptURL)
