@@ -116,13 +116,20 @@ Untuk update database schema atau menambah fitur:
 
 ## 🆘 Troubleshooting
 
+### Error "Could not find the table 'public.whitelist'"
+**Solusi**: Jalankan script `setup_database.sql` di Supabase Dashboard
+1. Buka Supabase Dashboard → SQL Editor
+2. Copy-paste isi `setup_database.sql`
+3. Klik "Run"
+4. Refresh halaman aplikasi
+
 ### Error "Failed to connect to Supabase"
 - Pastikan URL dan Key sudah benar
 - Cek koneksi internet
 - Pastikan project Supabase aktif
 
 ### Error "Table doesn't exist"
-- Jalankan script `supabase_setup.sql` terlebih dahulu
+- Jalankan script `setup_database.sql` terlebih dahulu
 - Pastikan script berhasil dijalankan tanpa error
 
 ### Error "Permission denied"

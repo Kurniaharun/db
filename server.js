@@ -30,6 +30,38 @@ app.get('/api/config', (req, res) => {
     res.json(config);
 });
 
+// Raw endpoint untuk menampilkan username per line (seperti raw.githubusercontent.com)
+app.get('/raw', async (req, res) => {
+    try {
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Ambil semua username dari database
+        const { data, error } = await supabase
+            .from('whitelist')
+            .select('username')
+            .order('username');
+
+        if (error) {
+            return res.status(500).send(`Error: ${error.message}`);
+        }
+
+        // Format username per line
+        const usernames = data.map(item => item.username).join('\n');
+        
+        // Set header untuk raw text
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        
+        // Kirim response
+        res.send(usernames || '');
+        
+    } catch (error) {
+        res.status(500).send(`Error: ${error.message}`);
+    }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
@@ -43,6 +75,7 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
     console.log(`🚀 Server berjalan di port ${PORT}`);
     console.log(`📱 Buka http://localhost:${PORT} untuk mengakses aplikasi`);
+    console.log(`🔗 Raw link: http://localhost:${PORT}/raw`);
     
     // Cek environment variables
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
