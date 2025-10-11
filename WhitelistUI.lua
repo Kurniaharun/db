@@ -32,12 +32,12 @@ local function createWhitelistUI()
     -- Store blur effect reference untuk cleanup
     _G.WhitelistBlurEffect = blurEffect
     
-    -- Frame utama dengan gradient
+    -- Frame utama dengan AI-style gradient
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 450, 0, 280)
-    mainFrame.Position = UDim2.new(0.5, -225, 0.5, -140)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+    mainFrame.Size = UDim2.new(0, 400, 0, 200)
+    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = screenGui
     
@@ -46,92 +46,106 @@ local function createWhitelistUI()
     corner.CornerRadius = UDim.new(0, 15)
     corner.Parent = mainFrame
     
-    -- Border glow effect
-    local borderGlow = Instance.new("UIStroke")
-    borderGlow.Color = Color3.fromRGB(0, 255, 255)
-    borderGlow.Thickness = 2
-    borderGlow.Transparency = 0.3
-    borderGlow.Parent = mainFrame
+    -- AI-style border dengan multiple strokes
+    local borderGlow1 = Instance.new("UIStroke")
+    borderGlow1.Color = Color3.fromRGB(0, 255, 255)
+    borderGlow1.Thickness = 3
+    borderGlow1.Transparency = 0.2
+    borderGlow1.Parent = mainFrame
     
-    -- Animated border glow
+    local borderGlow2 = Instance.new("UIStroke")
+    borderGlow2.Color = Color3.fromRGB(100, 0, 255)
+    borderGlow2.Thickness = 1
+    borderGlow2.Transparency = 0.5
+    borderGlow2.Parent = mainFrame
+    
+    -- Animated AI border glow
     spawn(function()
         while mainFrame.Parent do
-            for i = 0, 1, 0.02 do
+            for i = 0, 1, 0.01 do
                 if not mainFrame.Parent then break end
-                borderGlow.Transparency = 0.3 + (math.sin(i * math.pi) * 0.2)
-                wait(0.05)
+                borderGlow1.Transparency = 0.2 + (math.sin(i * math.pi * 3) * 0.3)
+                borderGlow2.Transparency = 0.5 + (math.cos(i * math.pi * 2) * 0.2)
+                wait(0.02)
             end
         end
     end)
     
-    -- Title dengan efek neon
+    -- AI-style title dengan efek matrix
     local title = Instance.new("TextLabel")
     title.Name = "Title"
-    title.Size = UDim2.new(1, 0, 0, 50)
-    title.Position = UDim2.new(0, 0, 0, 0)
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 5)
     title.BackgroundTransparency = 1
-    title.Text = "⚡ ACCESS VERIFICATION ⚡"
+    title.Text = "> AI_VERIFICATION_SYSTEM <"
     title.TextColor3 = Color3.fromRGB(0, 255, 255)
     title.TextScaled = true
-    title.Font = Enum.Font.GothamBold
-    title.TextStrokeTransparency = 0.5
+    title.Font = Enum.Font.Code
+    title.TextStrokeTransparency = 0.3
     title.TextStrokeColor3 = Color3.fromRGB(0, 200, 255)
     title.Parent = mainFrame
     
-    -- Animated title glow
+    -- AI title animation
     spawn(function()
         while title.Parent do
             for i = 0, 1, 0.02 do
                 if not title.Parent then break end
-                title.TextStrokeTransparency = 0.5 + (math.sin(i * math.pi * 2) * 0.3)
+                title.TextStrokeTransparency = 0.3 + (math.sin(i * math.pi * 4) * 0.4)
                 wait(0.03)
             end
         end
     end)
     
-    -- Username display dengan style futuristic
+    -- AI-style username display
     local usernameLabel = Instance.new("TextLabel")
     usernameLabel.Name = "UsernameLabel"
-    usernameLabel.Size = UDim2.new(1, -20, 0, 30)
-    usernameLabel.Position = UDim2.new(0, 10, 0, 60)
+    usernameLabel.Size = UDim2.new(1, -20, 0, 25)
+    usernameLabel.Position = UDim2.new(0, 10, 0, 40)
     usernameLabel.BackgroundTransparency = 1
-    usernameLabel.Text = "USER: " .. string.upper(player.Name)
-    usernameLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    usernameLabel.Text = "USER_ID: " .. string.upper(player.Name)
+    usernameLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
     usernameLabel.TextScaled = true
     usernameLabel.Font = Enum.Font.Code
     usernameLabel.TextXAlignment = Enum.TextXAlignment.Left
     usernameLabel.Parent = mainFrame
     
-    -- Status label dengan animasi loading
+    -- AI-style status dengan terminal effect
     local statusLabel = Instance.new("TextLabel")
     statusLabel.Name = "StatusLabel"
-    statusLabel.Size = UDim2.new(1, -20, 0, 35)
-    statusLabel.Position = UDim2.new(0, 10, 0, 100)
+    statusLabel.Size = UDim2.new(1, -20, 0, 25)
+    statusLabel.Position = UDim2.new(0, 10, 0, 70)
     statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "STATUS: SCANNING..."
+    statusLabel.Text = "STATUS: SCANNING_DATABASE..."
     statusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
     statusLabel.TextScaled = true
-    statusLabel.Font = Enum.Font.GothamBold
+    statusLabel.Font = Enum.Font.Code
     statusLabel.TextXAlignment = Enum.TextXAlignment.Left
     statusLabel.Parent = mainFrame
     
-    -- Loading dots animation
+    -- AI loading animation dengan terminal effect
     spawn(function()
-        local dots = ""
-        while statusLabel.Parent and statusLabel.Text:find("SCANNING") do
-            dots = dots .. "."
-            if #dots > 3 then dots = "" end
-            statusLabel.Text = "STATUS: SCANNING" .. dots
-            wait(0.5)
+        local loadingTexts = {
+            "STATUS: SCANNING_DATABASE...",
+            "STATUS: ANALYZING_USER_DATA...",
+            "STATUS: CHECKING_WHITELIST...",
+            "STATUS: VERIFYING_ACCESS..."
+        }
+        local currentIndex = 1
+        
+        while statusLabel.Parent and statusLabel.Text:find("SCANNING") or statusLabel.Text:find("ANALYZING") or statusLabel.Text:find("CHECKING") or statusLabel.Text:find("VERIFYING") do
+            statusLabel.Text = loadingTexts[currentIndex]
+            currentIndex = currentIndex + 1
+            if currentIndex > #loadingTexts then currentIndex = 1 end
+            wait(0.8)
         end
     end)
     
-    -- Progress bar background
+    -- AI-style progress bar dengan glow effect
     local progressBG = Instance.new("Frame")
     progressBG.Name = "ProgressBG"
     progressBG.Size = UDim2.new(1, -20, 0, 8)
-    progressBG.Position = UDim2.new(0, 10, 0, 145)
-    progressBG.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    progressBG.Position = UDim2.new(0, 10, 0, 100)
+    progressBG.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     progressBG.BorderSizePixel = 0
     progressBG.Parent = mainFrame
     
@@ -139,7 +153,14 @@ local function createWhitelistUI()
     progressCorner.CornerRadius = UDim.new(1, 0)
     progressCorner.Parent = progressBG
     
-    -- Progress bar fill
+    -- Progress bar border
+    local progressBorder = Instance.new("UIStroke")
+    progressBorder.Color = Color3.fromRGB(0, 255, 255)
+    progressBorder.Thickness = 1
+    progressBorder.Transparency = 0.3
+    progressBorder.Parent = progressBG
+    
+    -- Progress bar fill dengan gradient effect
     local progressFill = Instance.new("Frame")
     progressFill.Name = "ProgressFill"
     progressFill.Size = UDim2.new(0, 0, 1, 0)
@@ -152,79 +173,53 @@ local function createWhitelistUI()
     progressFillCorner.CornerRadius = UDim.new(1, 0)
     progressFillCorner.Parent = progressFill
     
-    -- Animate progress bar
+    -- Progress bar glow
+    local progressGlow = Instance.new("UIStroke")
+    progressGlow.Color = Color3.fromRGB(100, 255, 255)
+    progressGlow.Thickness = 2
+    progressGlow.Transparency = 0.5
+    progressGlow.Parent = progressFill
+    
+    -- Animate progress bar dengan AI effect
     spawn(function()
-        for i = 0, 1, 0.02 do
+        for i = 0, 1, 0.015 do
             if not progressFill.Parent then break end
             progressFill.Size = UDim2.new(i, 0, 1, 0)
-            wait(0.05)
+            progressGlow.Transparency = 0.5 + (math.sin(i * math.pi * 8) * 0.3)
+            wait(0.03)
         end
     end)
     
-    -- Contact info frame (akan muncul jika not whitelisted)
-    local contactFrame = Instance.new("Frame")
-    contactFrame.Name = "ContactFrame"
-    contactFrame.Size = UDim2.new(1, -20, 0, 80)
-    contactFrame.Position = UDim2.new(0, 10, 1, -90)
-    contactFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 15)
-    contactFrame.BorderSizePixel = 0
-    contactFrame.Visible = false
-    contactFrame.Parent = mainFrame
+    -- AI-style contact info (akan muncul jika not whitelisted)
+    local contactLabel = Instance.new("TextLabel")
+    contactLabel.Name = "ContactLabel"
+    contactLabel.Size = UDim2.new(1, -20, 0, 30)
+    contactLabel.Position = UDim2.new(0, 10, 0, 115)
+    contactLabel.BackgroundTransparency = 1
+    contactLabel.Text = "> CONTACT_ADMIN: +62 853 5118 7520 <"
+    contactLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    contactLabel.TextScaled = true
+    contactLabel.Font = Enum.Font.Code
+    contactLabel.TextXAlignment = Enum.TextXAlignment.Center
+    contactLabel.TextStrokeTransparency = 0.3
+    contactLabel.TextStrokeColor3 = Color3.fromRGB(255, 0, 0)
+    contactLabel.Visible = false
+    contactLabel.Parent = mainFrame
     
-    local contactCorner = Instance.new("UICorner")
-    contactCorner.CornerRadius = UDim.new(0, 10)
-    contactCorner.Parent = contactFrame
-    
-    local contactBorder = Instance.new("UIStroke")
-    contactBorder.Color = Color3.fromRGB(255, 100, 100)
-    contactBorder.Thickness = 2
-    contactBorder.Parent = contactFrame
-    
-    local contactTitle = Instance.new("TextLabel")
-    contactTitle.Size = UDim2.new(1, 0, 0, 25)
-    contactTitle.Position = UDim2.new(0, 0, 0, 5)
-    contactTitle.BackgroundTransparency = 1
-    contactTitle.Text = "⚠️ ACCESS DENIED ⚠️"
-    contactTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
-    contactTitle.TextScaled = true
-    contactTitle.Font = Enum.Font.GothamBold
-    contactTitle.Parent = contactFrame
-    
-    local contactText = Instance.new("TextLabel")
-    contactText.Size = UDim2.new(1, -10, 0, 20)
-    contactText.Position = UDim2.new(0, 5, 0, 30)
-    contactText.BackgroundTransparency = 1
-    contactText.Text = "Contact WhatsApp for access:"
-    contactText.TextColor3 = Color3.fromRGB(255, 200, 200)
-    contactText.TextScaled = true
-    contactText.Font = Enum.Font.Gotham
-    contactText.TextXAlignment = Enum.TextXAlignment.Left
-    contactText.Parent = contactFrame
-    
-    local whatsappLabel = Instance.new("TextLabel")
-    whatsappLabel.Name = "WhatsAppLabel"
-    whatsappLabel.Size = UDim2.new(1, -10, 0, 25)
-    whatsappLabel.Position = UDim2.new(0, 5, 0, 50)
-    whatsappLabel.BackgroundTransparency = 1
-    whatsappLabel.Text = "📱 +62 853 5118 7520"
-    whatsappLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    whatsappLabel.TextScaled = true
-    whatsappLabel.Font = Enum.Font.GothamBold
-    whatsappLabel.TextXAlignment = Enum.TextXAlignment.Left
-    whatsappLabel.Parent = contactFrame
-    
-    -- Animated whatsapp glow
+    -- AI contact animation
     spawn(function()
-        while whatsappLabel.Parent do
+        while contactLabel.Parent do
             for i = 0, 1, 0.02 do
-                if not whatsappLabel.Parent then break end
-                whatsappLabel.TextStrokeTransparency = 0.5 + (math.sin(i * math.pi * 2) * 0.3)
+                if not contactLabel.Parent then break end
+                if contactLabel.Visible then
+                    contactLabel.TextStrokeTransparency = 0.3 + (math.sin(i * math.pi * 6) * 0.4)
+                end
                 wait(0.05)
             end
         end
     end)
     
-    return screenGui, statusLabel, contactFrame, progressFill
+    return screenGui, statusLabel, contactLabel, progressFill
 end
 
 -- Fungsi untuk membersihkan string dari karakter tersembunyi
@@ -286,25 +281,16 @@ local function checkWhitelist(username)
 end
 
 -- Fungsi untuk update status UI dan environment
-local function updateStatus(statusLabel, contactFrame, isWhitelisted)
+local function updateStatus(statusLabel, contactLabel, isWhitelisted)
     WhitelistEnv.isWhitelisted = isWhitelisted
     
     if isWhitelisted then
-        statusLabel.Text = "STATUS: ✅ ACCESS GRANTED"
+        statusLabel.Text = "STATUS: ACCESS_GRANTED ✓"
         statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
         
-        -- Success animation
+        -- Auto cleanup setelah 2 detik jika whitelisted
         spawn(function()
-            for i = 0, 1, 0.05 do
-                if not statusLabel.Parent then break end
-                statusLabel.TextStrokeTransparency = 0.5 + (math.sin(i * math.pi * 4) * 0.3)
-                wait(0.1)
-            end
-        end)
-        
-        -- Auto cleanup setelah 3 detik jika whitelisted
-        spawn(function()
-            wait(3)
+            wait(2)
             
             -- Cleanup blur effect dulu
             if _G.WhitelistBlurEffect then
@@ -312,47 +298,21 @@ local function updateStatus(statusLabel, contactFrame, isWhitelisted)
                 _G.WhitelistBlurEffect = nil
             end
             
-            -- Fade out animation untuk semua elemen UI
-            local mainFrame = statusLabel.Parent.Parent
-            local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-            
-            -- Fade out main frame
-            local fadeOut = TweenService:Create(mainFrame, tweenInfo, {BackgroundTransparency = 1})
-            fadeOut:Play()
-            
-            -- Fade out semua child elements
-            for _, child in pairs(mainFrame:GetDescendants()) do
-                if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("Frame") then
-                    local childFade = TweenService:Create(child, tweenInfo, {BackgroundTransparency = 1, TextTransparency = 1})
-                    childFade:Play()
-                end
+            -- Destroy UI langsung tanpa tween yang rumit
+            local screenGui = statusLabel.Parent.Parent.Parent
+            if screenGui then
+                screenGui:Destroy()
             end
             
-            fadeOut.Completed:Connect(function()
-                mainFrame:Destroy() -- Destroy UI
-                WhitelistEnv.onWhitelisted() -- Call callback
-            end)
+            -- Call callback
+            WhitelistEnv.onWhitelisted()
         end)
     else
-        statusLabel.Text = "STATUS: ❌ ACCESS DENIED"
+        statusLabel.Text = "STATUS: ACCESS_DENIED ✗"
         statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
         
-        -- Show contact frame dengan animasi
-        contactFrame.Visible = true
-        contactFrame.BackgroundTransparency = 1
-        
-        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local fadeIn = TweenService:Create(contactFrame, tweenInfo, {BackgroundTransparency = 0})
-        fadeIn:Play()
-        
-        -- Error animation
-        spawn(function()
-            for i = 0, 1, 0.05 do
-                if not statusLabel.Parent then break end
-                statusLabel.TextStrokeTransparency = 0.5 + (math.sin(i * math.pi * 6) * 0.3)
-                wait(0.1)
-            end
-        end)
+        -- Show contact label
+        contactLabel.Visible = true
         
         WhitelistEnv.onNotWhitelisted() -- Call callback
     end
@@ -374,14 +334,14 @@ end
 
 -- Main function
 local function main()
-    local screenGui, statusLabel, contactFrame, progressFill = createWhitelistUI()
+    local screenGui, statusLabel, contactLabel, progressFill = createWhitelistUI()
     
     -- Auto check on load
     spawn(function()
         wait(2) -- Wait for UI to load and progress bar to fill
         print("🚀 Starting whitelist check for:", player.Name)
         local isWhitelisted = checkWhitelist(player.Name)
-        updateStatus(statusLabel, contactFrame, isWhitelisted)
+        updateStatus(statusLabel, contactLabel, isWhitelisted)
         
         -- Show result in chat
         if isWhitelisted then
@@ -406,6 +366,13 @@ WhitelistEnv.onWhitelisted = function()
     local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
     if playerGui:FindFirstChild("WhitelistLib") then
         playerGui.WhitelistLib:Destroy()
+    end
+    
+    -- Force cleanup semua UI yang mungkin tertinggal
+    for _, child in pairs(playerGui:GetChildren()) do
+        if child.Name == "WhitelistLib" then
+            child:Destroy()
+        end
     end
     
     -- Script akan otomatis load script selanjutnya dari URL
