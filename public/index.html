@@ -229,6 +229,9 @@
         <div class="header">
             <h1>🔐 Whitelist Manager</h1>
             <p>Kelola daftar username yang diizinkan dengan mudah</p>
+            <button class="btn btn-logout" onclick="logout()" style="margin-top: 15px; background: linear-gradient(135deg, #f44336, #da190b); padding: 8px 16px; font-size: 14px;">
+                🚪 Logout
+            </button>
         </div>
 
         <div class="content">
@@ -274,9 +277,52 @@
     <script>
         let supabase = null;
 
+        // Cek status autentikasi
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/api/auth-status');
+                const data = await response.json();
+                
+                if (!data.authenticated) {
+                    window.location.href = '/login';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.log('Auth check failed:', error);
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = '/login';
+                } else {
+                    showResult('❌ Gagal logout: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Terjadi kesalahan saat logout: ' + error.message, 'error');
+            }
+        }
+
         // Inisialisasi aplikasi
         async function initApp() {
             try {
+                // Cek autentikasi terlebih dahulu
+                const isAuthenticated = await checkAuthStatus();
+                if (!isAuthenticated) return;
+
                 // Ambil konfigurasi dari server
                 const response = await fetch('/api/config');
                 const config = await response.json();
