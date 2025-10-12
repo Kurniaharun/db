@@ -46,26 +46,23 @@ local function checkWhitelist(username)
         local response = game:HttpGet("https://testveo-1e65aed90f2f.herokuapp.com/raw")
         
         print("🔍 Checking whitelist for:", username)
-        print("📋 Raw response:", response)
         
         -- Parse JSON response
         local data = HttpService:JSONDecode(response)
         
         if data and data.whitelist then
-            print("📝 Total whitelist entries:", #data.whitelist)
+            print("📝 Checking database...")
             
             for i, whitelistedUser in pairs(data.whitelist) do
-                print("Entry " .. i .. ":", "'" .. whitelistedUser .. "'")
-                
                 -- Check exact match
                 if whitelistedUser == username then
-                    print("✅ Username found in whitelist! (exact match)")
+                    print("✅ Username found in whitelist!")
                     return true
                 end
                 
                 -- Check case-insensitive match
                 if string.lower(whitelistedUser) == string.lower(username) then
-                    print("✅ Username found in whitelist! (case-insensitive match)")
+                    print("✅ Username found in whitelist!")
                     return true
                 end
             end
