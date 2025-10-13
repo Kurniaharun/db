@@ -230,43 +230,6 @@
             color: #856404;
         }
 
-        .user-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            background: white;
-        }
-
-        .user-item {
-            padding: 10px 15px;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .user-item:last-child {
-            border-bottom: none;
-        }
-
-        .user-item .username {
-            font-weight: 500;
-        }
-
-        .user-item .delete-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .user-item .delete-btn:hover {
-            background: #c82333;
-        }
     </style>
 </head>
 <body>
@@ -298,29 +261,21 @@
                 </div>
             </div>
 
-            <!-- Add User Section -->
+            <!-- User Management Section -->
             <div class="section">
-                <h2>👥 Tambah User ke Whitelist</h2>
+                <h2>👥 Kelola User Whitelist</h2>
                 <div class="form-group">
                     <label for="username">Username:</label>
                     <input type="text" id="username" placeholder="Masukkan username">
                 </div>
                 <div class="button-group">
                     <button class="btn btn-add" onclick="addUser()">➕ Tambah User</button>
+                    <button class="btn btn-delete" onclick="deleteUser()">🗑️ Hapus User</button>
                     <button class="btn btn-check" onclick="checkUser()">🔍 Cek User</button>
                 </div>
                 <div id="addResult"></div>
             </div>
 
-            <!-- User Management Section -->
-            <div class="section">
-                <h2>📋 Daftar User Anda</h2>
-                <div class="user-list" id="userList">
-                    <div style="padding: 20px; text-align: center; color: #6c757d;">
-                        Memuat daftar user...
-                    </div>
-                </div>
-            </div>
 
             <!-- Upgrade Section -->
             <div class="section upgrade-section">
@@ -363,7 +318,6 @@
             document.getElementById('currentLimit').textContent = resellerData.limit || 0;
 
             // Load data awal
-            await loadUserList();
             await updateStats();
         }
 
@@ -378,37 +332,6 @@
             resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
         }
 
-        // Load daftar user
-        async function loadUserList() {
-            try {
-                const response = await fetch('/api/reseller/users', {
-                    headers: {
-                        'x-api-key': resellerKey
-                    }
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    const userList = document.getElementById('userList');
-                    
-                    if (data.data && data.data.length > 0) {
-                        userList.innerHTML = data.data.map(user => `
-                            <div class="user-item">
-                                <span class="username">${user.username}</span>
-                                <button class="delete-btn" onclick="deleteUser('${user.username}')">Hapus</button>
-                            </div>
-                        `).join('');
-                    } else {
-                        userList.innerHTML = '<div style="padding: 20px; text-align: center; color: #6c757d;">Belum ada user</div>';
-                    }
-                } else {
-                    showResult('addResult', '❌ Gagal memuat daftar user: ' + data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error loading user list:', error);
-            }
-        }
 
         // Update statistik
         async function updateStats() {
@@ -457,7 +380,47 @@
                 if (data.success) {
                     showResult('addResult', '✅ User berhasil ditambahkan!', 'success');
                     document.getElementById('username').value = '';
-                    await loadUserList();
+                    await updateStats();
+                } else {
+                    showResult('addResult', '❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showResult('addResult', '❌ Terjadi kesalahan: ' + error.message, 'error');
+            }
+        }
+
+        // Hapus user
+        async function deleteUser() {
+            const username = document.getElementById('username').value.trim();
+            
+            if (!username) {
+                showResult('addResult', '❌ Mohon masukkan username!', 'error');
+                return;
+            }
+
+            if (!confirm(`Yakin ingin menghapus user "${username}"?`)) {
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/reseller/delete-user', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': resellerKey
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.success) {
+                    showResult('addResult', `✅ User "${username}" berhasil dihapus!`, 'success');
+                    document.getElementById('username').value = '';
                     await updateStats();
                 } else {
                     showResult('addResult', '❌ ' + data.message, 'error');
@@ -504,39 +467,6 @@
             }
         }
 
-        // Hapus user
-        async function deleteUser(username) {
-            if (!confirm(`Yakin ingin menghapus user "${username}"?`)) {
-                return;
-            }
-
-            showLoading(true);
-
-            try {
-                const response = await fetch('/api/reseller/delete-user', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': resellerKey
-                    },
-                    body: JSON.stringify({ username })
-                });
-
-                const data = await response.json();
-                showLoading(false);
-
-                if (data.success) {
-                    showResult('addResult', `✅ User "${username}" berhasil dihapus!`, 'success');
-                    await loadUserList();
-                    await updateStats();
-                } else {
-                    showResult('addResult', '❌ ' + data.message, 'error');
-                }
-            } catch (error) {
-                showLoading(false);
-                showResult('addResult', '❌ Terjadi kesalahan: ' + error.message, 'error');
-            }
-        }
 
         // Upgrade limit
         async function upgradeLimit() {

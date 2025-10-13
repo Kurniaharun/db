@@ -149,6 +149,16 @@
             color: white;
         }
 
+        .btn-check {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .btn-raw {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+
         .result {
             margin-top: 20px;
             padding: 15px;
@@ -271,6 +281,18 @@
             background: #dc3545;
             color: white;
         }
+
+        .raw-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -308,9 +330,25 @@
                 <div id="createUpgradeResult"></div>
             </div>
 
+            <!-- Whitelist Management Section -->
+            <div class="section">
+                <h2>📋 Kelola Whitelist</h2>
+                <div class="form-group">
+                    <label for="whitelistUsername">Username:</label>
+                    <input type="text" id="whitelistUsername" placeholder="Masukkan username">
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-create" onclick="addToWhitelist()">➕ Add Whitelist</button>
+                    <button class="btn btn-delete" onclick="deleteFromWhitelist()">🗑️ Delete Whitelist</button>
+                    <button class="btn btn-check" onclick="checkWhitelist()">🔍 Check Whitelist</button>
+                    <button class="btn btn-raw" onclick="getRawLink()">📋 Get Raw Link</button>
+                </div>
+                <div id="whitelistResult"></div>
+            </div>
+
             <!-- Keys Management Section -->
             <div class="section">
-                <h2>📋 Daftar Keys</h2>
+                <h2>🔑 Daftar Keys</h2>
                 <div class="button-group">
                     <button class="btn btn-refresh" onclick="loadKeys()">🔄 Refresh</button>
                 </div>
@@ -502,6 +540,7 @@
                         <tr>
                             <th>Key</th>
                             <th>Username</th>
+                            <th>Type</th>
                             <th>Limit</th>
                             <th>Status</th>
                             <th>Dibuat</th>
@@ -515,11 +554,14 @@
                 const isActive = key.isActive;
                 const statusClass = isActive ? 'status-active' : 'status-inactive';
                 const statusText = isActive ? 'Active' : 'Inactive';
+                const typeClass = key.type === 'reseller' ? 'status-active' : 'status-inactive';
+                const typeText = key.type === 'reseller' ? 'Reseller' : 'User';
                 
                 tableHTML += `
                     <tr>
                         <td><span class="key-display">${key.key}</span></td>
                         <td>${key.username}</td>
+                        <td><span class="status-badge ${typeClass}">${typeText}</span></td>
                         <td>${key.limit}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td>${new Date(key.createdAt).toLocaleString()}</td>
@@ -576,6 +618,163 @@
             }
         }
 
+        // Whitelist management functions
+        async function addToWhitelist() {
+            const username = document.getElementById('whitelistUsername').value.trim();
+            
+            if (!username) {
+                showResult('whitelistResult', '❌ Mohon masukkan username!', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/whitelist/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.success) {
+                    showResult('whitelistResult', '✅ User berhasil ditambahkan ke whitelist!', 'success');
+                    document.getElementById('whitelistUsername').value = '';
+                } else {
+                    showResult('whitelistResult', '❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showResult('whitelistResult', '❌ Terjadi kesalahan: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteFromWhitelist() {
+            const username = document.getElementById('whitelistUsername').value.trim();
+            
+            if (!username) {
+                showResult('whitelistResult', '❌ Mohon masukkan username!', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/whitelist/delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.success) {
+                    showResult('whitelistResult', '✅ User berhasil dihapus dari whitelist!', 'success');
+                    document.getElementById('whitelistUsername').value = '';
+                } else {
+                    showResult('whitelistResult', '❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showResult('whitelistResult', '❌ Terjadi kesalahan: ' + error.message, 'error');
+            }
+        }
+
+        async function checkWhitelist() {
+            const username = document.getElementById('whitelistUsername').value.trim();
+            
+            if (!username) {
+                showResult('whitelistResult', '❌ Mohon masukkan username!', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`/api/whitelist/check?username=${encodeURIComponent(username)}`);
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.success) {
+                    if (data.found) {
+                        showResult('whitelistResult', `✅ Username "${username}" ADA di whitelist!`, 'success');
+                    } else {
+                        showResult('whitelistResult', `❌ Username "${username}" TIDAK ADA di whitelist!`, 'error');
+                    }
+                } else {
+                    showResult('whitelistResult', '❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showResult('whitelistResult', '❌ Terjadi kesalahan: ' + error.message, 'error');
+            }
+        }
+
+        async function getRawLink() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('/raw');
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.whitelist) {
+                    const jsonString = JSON.stringify(data, null, 2);
+                    const baseUrl = window.location.origin;
+                    const rawUrl = `${baseUrl}/raw`;
+                    
+                    const resultDiv = document.getElementById('whitelistResult');
+                    resultDiv.innerHTML = `
+                        <div class="result success">✅ Raw Link Whitelist (${data.whitelist.length} users):</div>
+                        <div class="raw-output">${jsonString}</div>
+                        <div style="margin-top: 15px;">
+                            <div class="result info">🔗 Raw JSON URL (bisa dibuka di browser):</div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; word-break: break-all;">
+                                <a href="${rawUrl}" target="_blank" style="color: #007bff; text-decoration: none;">${rawUrl}</a>
+                            </div>
+                            <button class="btn btn-create" onclick="copyToClipboard()" style="margin-right: 10px;">📋 Copy JSON</button>
+                            <button class="btn btn-check" onclick="copyRawUrl()">🔗 Copy Raw URL</button>
+                        </div>
+                    `;
+                } else {
+                    showResult('whitelistResult', '❌ Gagal mengambil data whitelist!', 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showResult('whitelistResult', '❌ Terjadi kesalahan: ' + error.message, 'error');
+            }
+        }
+
+        function copyToClipboard() {
+            const rawOutput = document.querySelector('.raw-output');
+            const text = rawOutput.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showResult('whitelistResult', '✅ JSON berhasil disalin ke clipboard!', 'success');
+            }).catch(() => {
+                showResult('whitelistResult', '❌ Gagal menyalin ke clipboard!', 'error');
+            });
+        }
+
+        function copyRawUrl() {
+            const baseUrl = window.location.origin;
+            const rawUrl = `${baseUrl}/raw`;
+            
+            navigator.clipboard.writeText(rawUrl).then(() => {
+                showResult('whitelistResult', '✅ Raw URL berhasil disalin ke clipboard!', 'success');
+            }).catch(() => {
+                showResult('whitelistResult', '❌ Gagal menyalin URL ke clipboard!', 'error');
+            });
+        }
+
         // Inisialisasi
         async function initAdmin() {
             const isAuthenticated = await checkAdminStatus();
@@ -594,6 +793,12 @@
         document.getElementById('upgradeResellerKey').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 createUpgradeKey();
+            }
+        });
+
+        document.getElementById('whitelistUsername').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addToWhitelist();
             }
         });
 

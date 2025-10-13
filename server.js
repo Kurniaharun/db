@@ -325,11 +325,27 @@ app.post('/api/admin/create-upgrade-key', requireAdminAuth, (req, res) => {
 app.delete('/api/admin/delete-key/:key', requireAdminAuth, (req, res) => {
     const { key } = req.params;
     
+    let deleted = false;
+    let keyType = '';
+    
+    // Try to delete from device sessions (user keys)
     if (deviceSessions.has(key)) {
         deviceSessions.delete(key);
+        deleted = true;
+        keyType = 'user';
+    }
+    
+    // Try to delete from reseller sessions
+    if (resellerSessions.has(key)) {
+        resellerSessions.delete(key);
+        deleted = true;
+        keyType = 'reseller';
+    }
+    
+    if (deleted) {
         res.json({
             success: true,
-            message: 'Key berhasil dihapus'
+            message: `${keyType} key berhasil dihapus`
         });
     } else {
         res.status(404).json({
@@ -341,18 +357,32 @@ app.delete('/api/admin/delete-key/:key', requireAdminAuth, (req, res) => {
 
 // List all keys
 app.get('/api/admin/keys', requireAdminAuth, (req, res) => {
-    const keys = Array.from(deviceSessions.entries()).map(([key, data]) => ({
+    // Combine both device sessions (user keys) and reseller sessions
+    const userKeys = Array.from(deviceSessions.entries()).map(([key, data]) => ({
         key,
         username: data.username,
         limit: data.limit,
         createdAt: data.createdAt,
         lastActivity: new Date(data.lastActivity).toLocaleString(),
-        isActive: Date.now() - data.lastActivity < 30 * 60 * 1000
+        isActive: Date.now() - data.lastActivity < 30 * 60 * 1000,
+        type: 'user'
     }));
+    
+    const resellerKeys = Array.from(resellerSessions.entries()).map(([key, data]) => ({
+        key,
+        username: data.username,
+        limit: data.limit,
+        createdAt: data.createdAt,
+        lastActivity: data.lastActivity > 0 ? new Date(data.lastActivity).toLocaleString() : 'Never',
+        isActive: data.lastActivity > 0 && Date.now() - data.lastActivity < 30 * 60 * 1000,
+        type: 'reseller'
+    }));
+    
+    const allKeys = [...userKeys, ...resellerKeys];
     
     res.json({
         success: true,
-        data: keys
+        data: allKeys
     });
 });
 
@@ -926,6 +956,160 @@ app.get('/api/config', requireKeyAuth, (req, res) => {
     };
     
     res.json(config);
+});
+
+// Admin whitelist operations (tidak perlu key auth)
+app.post('/api/whitelist/add', requireAdminAuth, async (req, res) => {
+    try {
+        const { username } = req.body;
+        
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username diperlukan'
+            });
+        }
+        
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Cek apakah username sudah ada
+        const { data: existing, error: checkError } = await supabase
+            .from('whitelist')
+            .select('username')
+            .eq('username', username)
+            .single();
+        
+        if (existing) {
+            return res.status(400).json({
+                success: false,
+                message: `Username "${username}" sudah ada di whitelist!`
+            });
+        }
+        
+        // Tambah username baru
+        const { data, error } = await supabase
+            .from('whitelist')
+            .insert([{ username: username }])
+            .select();
+        
+        if (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Gagal menambah ke whitelist: ' + error.message
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: `Username "${username}" berhasil ditambahkan ke whitelist!`
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan: ' + error.message
+        });
+    }
+});
+
+app.delete('/api/whitelist/delete', requireAdminAuth, async (req, res) => {
+    try {
+        const { username } = req.body;
+        
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username diperlukan'
+            });
+        }
+        
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const { data, error } = await supabase
+            .from('whitelist')
+            .delete()
+            .eq('username', username)
+            .select();
+        
+        if (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Gagal menghapus dari whitelist: ' + error.message
+            });
+        }
+        
+        if (data && data.length > 0) {
+            res.json({
+                success: true,
+                message: `Username "${username}" berhasil dihapus dari whitelist!`
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: `Username "${username}" tidak ditemukan di whitelist!`
+            });
+        }
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan: ' + error.message
+        });
+    }
+});
+
+app.get('/api/whitelist/check', requireAdminAuth, async (req, res) => {
+    try {
+        const { username } = req.query;
+        
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username diperlukan'
+            });
+        }
+        
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const { data, error } = await supabase
+            .from('whitelist')
+            .select('username')
+            .eq('username', username)
+            .single();
+        
+        if (error && error.code !== 'PGRST116') {
+            return res.status(500).json({
+                success: false,
+                message: 'Gagal mengecek whitelist: ' + error.message
+            });
+        }
+        
+        if (data) {
+            res.json({
+                success: true,
+                message: `Username "${username}" ADA di whitelist!`,
+                found: true
+            });
+        } else {
+            res.json({
+                success: true,
+                message: `Username "${username}" TIDAK ADA di whitelist!`,
+                found: false
+            });
+        }
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan: ' + error.message
+        });
+    }
 });
 
 // Whitelist operations (dilindungi dengan key)

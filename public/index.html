@@ -185,15 +185,9 @@
 
         <div class="content">
             <div class="login-options">
-                <div class="login-card" onclick="goToUserLogin()">
-                    <h3>👤 User Login</h3>
-                    <p>Login dengan user key untuk mengelola whitelist</p>
-                    <button class="btn btn-user">Login User</button>
-                </div>
-
                 <div class="login-card" onclick="goToResellerLogin()">
                     <h3>🏪 Reseller Login</h3>
-                    <p>Login sebagai reseller untuk mengelola user dengan limit</p>
+                    <p>Login sebagai reseller untuk mengelola whitelist dengan limit</p>
                     <button class="btn btn-reseller">Login Reseller</button>
                 </div>
 
@@ -225,10 +219,6 @@
     </div>
 
     <script>
-        function goToUserLogin() {
-            window.location.href = '/login';
-        }
-
         function goToResellerLogin() {
             window.location.href = '/reseller-login';
         }
@@ -237,19 +227,8 @@
             window.location.href = '/admin/login';
         }
 
-        // Cek apakah user sudah login
+        // Cek apakah sudah login
         window.addEventListener('load', function() {
-            // Cek user login
-            fetch('/api/user/status')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.authenticated) {
-                        window.location.href = '/';
-                        return;
-                    }
-                })
-                .catch(() => {});
-
             // Cek reseller login
             fetch('/api/reseller/stats')
                 .then(response => response.json())
