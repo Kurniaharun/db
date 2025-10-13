@@ -189,58 +189,8 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
-// User login dengan password (untuk halaman login utama)
-app.post('/api/login', (req, res) => {
-    const { password, rememberMe } = req.body;
-    
-    if (password === ADMIN_PASSWORD) {
-        // Set session dengan durasi berbeda berdasarkan rememberMe
-        if (rememberMe) {
-            // Session 7 hari untuk Remember Me
-            req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 hari
-        } else {
-            // Session 30 menit untuk login biasa
-            req.session.cookie.maxAge = 30 * 60 * 1000; // 30 menit
-        }
-        
-        req.session.userAuthenticated = true;
-        req.session.username = 'admin';
-        
-        res.json({ 
-            success: true, 
-            message: rememberMe ? 'Login berhasil! Session disimpan selama 7 hari.' : 'Login berhasil!'
-        });
-    } else {
-        res.status(401).json({ 
-            success: false, 
-            message: 'Password salah!' 
-        });
-    }
-});
 
-// Cek status autentikasi umum
-app.get('/api/auth-status', (req, res) => {
-    const isAuthenticated = !!(req.session && req.session.userAuthenticated);
-    res.json({ 
-        authenticated: isAuthenticated 
-    });
-});
 
-// User logout (untuk yang login dengan password)
-app.post('/api/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal logout' 
-            });
-        }
-        res.json({ 
-            success: true, 
-            message: 'Logout berhasil!' 
-        });
-    });
-});
 
 // Admin logout
 app.post('/api/admin/logout', (req, res) => {
@@ -968,10 +918,6 @@ app.get('/admin', requireAdminAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Serve halaman user login
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'user-login.html'));
-});
 
 // Serve halaman reseller login
 app.get('/reseller-login', (req, res) => {
@@ -989,21 +935,9 @@ app.get('/reseller-dashboard', (req, res) => {
 
 // Serve halaman utama
 app.get('/', (req, res) => {
-    if (req.session && req.session.userAuthenticated) {
-        res.redirect('/user');
-    } else {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    }
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve halaman user (dilindungi dengan key)
-app.get('/user', (req, res) => {
-    if (req.session && req.session.userAuthenticated) {
-        res.sendFile(path.join(__dirname, 'public', 'user.html'));
-    } else {
-        res.redirect('/login');
-    }
-});
 
 // API endpoint untuk mendapatkan konfigurasi Supabase (dilindungi dengan key)
 app.get('/api/config', requireKeyAuth, (req, res) => {
