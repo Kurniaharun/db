@@ -192,6 +192,13 @@
                 <input type="password" id="password" placeholder="Masukkan password" required>
             </div>
 
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                    <input type="checkbox" id="rememberMe" style="margin-right: 8px; transform: scale(1.2);">
+                    💾 Simpan Login (Tidak Auto Logout)
+                </label>
+            </div>
+
             <button type="submit" class="btn" id="loginBtn">
                 🔑 Login
             </button>
@@ -227,6 +234,7 @@
             e.preventDefault();
             
             const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
             
             if (!password) {
                 showResult('❌ Mohon masukkan password!', 'error');
@@ -242,16 +250,19 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ password: password })
+                    body: JSON.stringify({ 
+                        password: password,
+                        rememberMe: rememberMe 
+                    })
                 });
 
                 const data = await response.json();
                 showLoading(false);
 
                 if (data.success) {
-                    showResult('✅ Login berhasil! Mengalihkan...', 'success');
+                    showResult('✅ ' + data.message + ' Mengalihkan...', 'success');
                     setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = '/user';
                     }, 1500);
                 } else {
                     showResult('❌ ' + data.message, 'error');
@@ -276,7 +287,7 @@
                 const data = await response.json();
                 
                 if (data.authenticated) {
-                    window.location.href = '/';
+                    window.location.href = '/user';
                 }
             } catch (error) {
                 console.log('Auth check failed:', error);

@@ -285,7 +285,7 @@
         // Cek status autentikasi
         async function checkAuthStatus() {
             try {
-                const response = await fetch('/api/user/status');
+                const response = await fetch('/api/auth-status');
                 const data = await response.json();
                 
                 if (!data.authenticated) {
@@ -303,7 +303,7 @@
         // Logout function
         async function logout() {
             try {
-                const response = await fetch('/api/user/logout', {
+                const response = await fetch('/api/logout', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
