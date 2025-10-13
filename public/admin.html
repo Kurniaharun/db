@@ -91,18 +91,26 @@
             color: #333;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group textarea {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #e1e5e9;
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s ease;
+            font-family: inherit;
         }
 
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #4facfe;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
         }
 
         .button-group {
@@ -156,6 +164,11 @@
 
         .btn-raw {
             background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+
+        .btn-bulk {
+            background: linear-gradient(135deg, #9C27B0, #7B1FA2);
             color: white;
         }
 
@@ -333,16 +346,36 @@
             <!-- Whitelist Management Section -->
             <div class="section">
                 <h2>📋 Kelola Whitelist</h2>
-                <div class="form-group">
-                    <label for="whitelistUsername">Username:</label>
-                    <input type="text" id="whitelistUsername" placeholder="Masukkan username">
+                
+                <!-- Single User Management -->
+                <div id="singleUserSection">
+                    <div class="form-group">
+                        <label for="whitelistUsername">Username:</label>
+                        <input type="text" id="whitelistUsername" placeholder="Masukkan username">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-create" onclick="addToWhitelist()">➕ Add Whitelist</button>
+                        <button class="btn btn-delete" onclick="deleteFromWhitelist()">🗑️ Delete Whitelist</button>
+                        <button class="btn btn-check" onclick="checkWhitelist()">🔍 Check Whitelist</button>
+                        <button class="btn btn-raw" onclick="getRawLink()">📋 Get Raw Link</button>
+                        <button class="btn btn-bulk" onclick="toggleBulkMode()">📝 Bulk Add Mode</button>
+                    </div>
                 </div>
-                <div class="button-group">
-                    <button class="btn btn-create" onclick="addToWhitelist()">➕ Add Whitelist</button>
-                    <button class="btn btn-delete" onclick="deleteFromWhitelist()">🗑️ Delete Whitelist</button>
-                    <button class="btn btn-check" onclick="checkWhitelist()">🔍 Check Whitelist</button>
-                    <button class="btn btn-raw" onclick="getRawLink()">📋 Get Raw Link</button>
+
+                <!-- Bulk User Management -->
+                <div id="bulkUserSection" style="display: none;">
+                    <div class="form-group">
+                        <label for="bulkUsernames">Usernames (satu per baris):</label>
+                        <textarea id="bulkUsernames" rows="10" placeholder="Masukkan usernames, satu per baris. Contoh:&#10;user1&#10;user2&#10;user3&#10;&#10;Note: @ symbol akan otomatis dihapus"></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-create" onclick="addBulkToWhitelist()">➕ Add Bulk Whitelist</button>
+                        <button class="btn btn-delete" onclick="clearBulkInput()">🗑️ Clear Input</button>
+                        <button class="btn btn-check" onclick="validateBulkInput()">🔍 Validate Input</button>
+                        <button class="btn btn-bulk" onclick="toggleBulkMode()">👤 Single Mode</button>
+                    </div>
                 </div>
+
                 <div id="whitelistResult"></div>
             </div>
 
@@ -773,6 +806,140 @@
             }).catch(() => {
                 showResult('whitelistResult', '❌ Gagal menyalin URL ke clipboard!', 'error');
             });
+        }
+
+        // Bulk operations
+        function toggleBulkMode() {
+            const singleSection = document.getElementById('singleUserSection');
+            const bulkSection = document.getElementById('bulkUserSection');
+            
+            if (singleSection.style.display === 'none') {
+                singleSection.style.display = 'block';
+                bulkSection.style.display = 'none';
+            } else {
+                singleSection.style.display = 'none';
+                bulkSection.style.display = 'block';
+            }
+        }
+
+        function clearBulkInput() {
+            document.getElementById('bulkUsernames').value = '';
+            showResult('whitelistResult', '✅ Input berhasil dibersihkan!', 'success');
+        }
+
+        function validateBulkInput() {
+            const input = document.getElementById('bulkUsernames').value.trim();
+            
+            if (!input) {
+                showResult('whitelistResult', '❌ Input kosong!', 'error');
+                return;
+            }
+
+            const usernames = input.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(username => username.replace(/@/g, '').trim())
+                .filter(username => username.length > 0);
+
+            if (usernames.length === 0) {
+                showResult('whitelistResult', '❌ Tidak ada username yang valid!', 'error');
+                return;
+            }
+
+            const uniqueUsernames = [...new Set(usernames)];
+            const duplicates = usernames.length - uniqueUsernames.length;
+
+            let message = `✅ Validasi berhasil!<br>`;
+            message += `📊 Total usernames: ${usernames.length}<br>`;
+            message += `🔢 Usernames unik: ${uniqueUsernames.length}<br>`;
+            if (duplicates > 0) {
+                message += `⚠️ Duplikasi: ${duplicates}<br>`;
+            }
+            message += `<br>📝 Usernames yang akan ditambahkan:<br>`;
+            message += `<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px; font-family: monospace; max-height: 200px; overflow-y: auto;">`;
+            uniqueUsernames.forEach((username, index) => {
+                message += `${index + 1}. ${username}<br>`;
+            });
+            message += `</div>`;
+
+            showResult('whitelistResult', message, 'success');
+        }
+
+        async function addBulkToWhitelist() {
+            const input = document.getElementById('bulkUsernames').value.trim();
+            
+            if (!input) {
+                showResult('whitelistResult', '❌ Input kosong!', 'error');
+                return;
+            }
+
+            const usernames = input.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(username => username.replace(/@/g, '').trim())
+                .filter(username => username.length > 0);
+
+            if (usernames.length === 0) {
+                showResult('whitelistResult', '❌ Tidak ada username yang valid!', 'error');
+                return;
+            }
+
+            const uniqueUsernames = [...new Set(usernames)];
+
+            if (!confirm(`Yakin ingin menambahkan ${uniqueUsernames.length} usernames ke whitelist?`)) {
+                return;
+            }
+
+            showLoading(true);
+
+            let successCount = 0;
+            let errorCount = 0;
+            let errors = [];
+
+            for (const username of uniqueUsernames) {
+                try {
+                    const response = await fetch('/api/whitelist/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                        errors.push(`${username}: ${data.message}`);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    errors.push(`${username}: ${error.message}`);
+                }
+            }
+
+            showLoading(false);
+
+            let message = `✅ Bulk add selesai!<br>`;
+            message += `✅ Berhasil: ${successCount}<br>`;
+            message += `❌ Gagal: ${errorCount}<br>`;
+
+            if (errors.length > 0) {
+                message += `<br>❌ Error details:<br>`;
+                message += `<div style="background: #f8d7da; padding: 10px; border-radius: 5px; margin-top: 10px; font-family: monospace; max-height: 200px; overflow-y: auto;">`;
+                errors.forEach(error => {
+                    message += `• ${error}<br>`;
+                });
+                message += `</div>`;
+            }
+
+            if (successCount > 0) {
+                message += `<br><button class="btn btn-create" onclick="clearBulkInput()" style="margin-top: 10px;">🗑️ Clear Input</button>`;
+            }
+
+            showResult('whitelistResult', message, successCount > 0 ? 'success' : 'error');
         }
 
         // Inisialisasi
