@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Reseller System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .login-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            min-height: 500px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .form-inline {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .form-inline input {
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <button class="logout-btn" id="logoutBtn" style="display: none;">Logout</button>
+
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Admin Panel</h1>
+            <p>Manajemen Sistem Reseller</p>
+        </div>
+
+        <div id="loginSection">
+            <div class="login-form">
+                <div id="alert" class="alert"></div>
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" value="admin" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" placeholder="Masukkan password" required>
+                    </div>
+                    <button type="submit" class="btn" id="loginBtn">Login Admin</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="dashboard" class="dashboard">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="overview">Overview</button>
+                <button class="nav-tab" data-tab="keys">Manajemen Key</button>
+                <button class="nav-tab" data-tab="users">Manajemen User</button>
+            </div>
+
+            <div class="tab-content">
+                <div id="overview" class="tab-pane active">
+                    <h2>📊 Overview Sistem</h2>
+                    <div class="stats-grid" id="statsGrid">
+                        <!-- Stats will be loaded here -->
+                    </div>
+                </div>
+
+                <div id="keys" class="tab-pane">
+                    <h2>🔑 Manajemen Access Key</h2>
+                    <div class="form-inline">
+                        <button class="btn btn-success" id="createKeyBtn">Buat Key Baru</button>
+                    </div>
+                    <div id="alertKeys" class="alert"></div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Key Value</th>
+                                <th>Status</th>
+                                <th>Tanggal Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="keysTableBody">
+                            <!-- Keys will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="users" class="tab-pane">
+                    <h2>👥 Manajemen User</h2>
+                    <div id="alertUsers" class="alert"></div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Limit Whitelist</th>
+                                <th>Tanggal Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let adminSessionId = null;
+
+        function showAlert(message, type = 'error', containerId = 'alert') {
+            const alert = document.getElementById(containerId);
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function switchTab(tabName) {
+            // Remove active class from all tabs and panes
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            // Add active class to selected tab and pane
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function loadStats() {
+            if (!adminSessionId) return;
+
+            Promise.all([
+                fetch(`/api/admin/keys?sessionId=${adminSessionId}`).then(r => r.json()),
+                fetch(`/api/admin/users?sessionId=${adminSessionId}`).then(r => r.json())
+            ]).then(([keysData, usersData]) => {
+                const statsGrid = document.getElementById('statsGrid');
+                const totalKeys = keysData.success ? keysData.keys.length : 0;
+                const totalUsers = usersData.success ? usersData.users.length : 0;
+                
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${totalKeys}</div>
+                        <div class="stat-label">Total Access Keys</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${totalUsers}</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${activeSessions.size}</div>
+                        <div class="stat-label">Active Sessions</div>
+                    </div>
+                `;
+            }).catch(error => {
+                console.error('Error loading stats:', error);
+            });
+        }
+
+        function loadKeys() {
+            if (!adminSessionId) return;
+
+            fetch(`/api/admin/keys?sessionId=${adminSessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const tbody = document.getElementById('keysTableBody');
+                        tbody.innerHTML = '';
+                        
+                        data.keys.forEach(key => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${key.id}</td>
+                                <td><code>${key.key_value}</code></td>
+                                <td><span style="color: ${key.is_active ? 'green' : 'red'}">${key.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+                                <td>${new Date(key.created_at).toLocaleString('id-ID')}</td>
+                                <td>
+                                    <button class="btn-small btn-primary" onclick="copyKey('${key.key_value}')">Copy</button>
+                                    <button class="btn-small btn-danger" onclick="deleteKey(${key.id})">Hapus</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    } else {
+                        showAlert('Gagal memuat keys', 'error', 'alertKeys');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error memuat keys', 'error', 'alertKeys');
+                });
+        }
+
+        function loadUsers() {
+            if (!adminSessionId) return;
+
+            fetch(`/api/admin/users?sessionId=${adminSessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const tbody = document.getElementById('usersTableBody');
+                        tbody.innerHTML = '';
+                        
+                        data.users.forEach(user => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${user.id}</td>
+                                <td>${user.username}</td>
+                                <td>
+                                    <input type="number" value="${user.limit_count || 25}" 
+                                           onchange="updateUserLimit(${user.id}, this.value)" 
+                                           style="width: 80px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                                </td>
+                                <td>${new Date(user.created_at).toLocaleString('id-ID')}</td>
+                                <td>
+                                    <button class="btn-small btn-primary" onclick="viewUserDetails(${user.id})">Detail</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    } else {
+                        showAlert('Gagal memuat users', 'error', 'alertUsers');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error memuat users', 'error', 'alertUsers');
+                });
+        }
+
+        function copyKey(keyValue) {
+            navigator.clipboard.writeText(keyValue).then(() => {
+                showAlert('Key berhasil disalin!', 'success', 'alertKeys');
+            }).catch(() => {
+                showAlert('Gagal menyalin key', 'error', 'alertKeys');
+            });
+        }
+
+        function deleteKey(keyId) {
+            if (!confirm('Yakin ingin menghapus key ini?')) return;
+
+            fetch('/api/admin/delete-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sessionId: adminSessionId,
+                    keyId: keyId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Key berhasil dihapus', 'success', 'alertKeys');
+                    loadKeys();
+                    loadStats();
+                } else {
+                    showAlert(data.message || 'Gagal menghapus key', 'error', 'alertKeys');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error menghapus key', 'error', 'alertKeys');
+            });
+        }
+
+        function updateUserLimit(userId, newLimit) {
+            if (!confirm(`Update limit user ke ${newLimit}?`)) return;
+
+            fetch('/api/admin/update-limit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sessionId: adminSessionId,
+                    userId: userId,
+                    newLimit: parseInt(newLimit)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Limit user berhasil diupdate', 'success', 'alertUsers');
+                } else {
+                    showAlert(data.message || 'Gagal update limit', 'error', 'alertUsers');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error update limit', 'error', 'alertUsers');
+            });
+        }
+
+        function viewUserDetails(userId) {
+            alert(`Detail user ID: ${userId}\nFitur ini akan dikembangkan lebih lanjut.`);
+        }
+
+        // Event listeners
+        document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Memproses...';
+
+            fetch('/api/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    adminSessionId = data.sessionId;
+                    localStorage.setItem('adminSessionId', adminSessionId);
+                    
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('dashboard').classList.add('active');
+                    document.getElementById('logoutBtn').style.display = 'block';
+                    
+                    // Join admin room for realtime updates
+                    socket.emit('join-admin', adminSessionId);
+                    
+                    // Load initial data
+                    loadStats();
+                    loadKeys();
+                    loadUsers();
+                    
+                    showAlert('Login admin berhasil!', 'success');
+                } else {
+                    showAlert(data.message || 'Login gagal');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error saat login');
+            })
+            .finally(() => {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login Admin';
+            });
+        });
+
+        document.getElementById('createKeyBtn').addEventListener('click', () => {
+            fetch('/api/admin/create-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sessionId: adminSessionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Key baru berhasil dibuat: ${data.key}`, 'success', 'alertKeys');
+                    loadKeys();
+                    loadStats();
+                } else {
+                    showAlert(data.message || 'Gagal membuat key', 'error', 'alertKeys');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error membuat key', 'error', 'alertKeys');
+            });
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminSessionId');
+            adminSessionId = null;
+            
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('logoutBtn').style.display = 'none';
+            
+            document.getElementById('password').value = '';
+        });
+
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                switchTab(tabName);
+                
+                // Load data when switching tabs
+                if (tabName === 'keys') {
+                    loadKeys();
+                } else if (tabName === 'users') {
+                    loadUsers();
+                } else if (tabName === 'overview') {
+                    loadStats();
+                }
+            });
+        });
+
+        // Check for existing admin session
+        const storedAdminSession = localStorage.getItem('adminSessionId');
+        if (storedAdminSession) {
+            adminSessionId = storedAdminSession;
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+            document.getElementById('logoutBtn').style.display = 'block';
+            socket.emit('join-admin', adminSessionId);
+            loadStats();
+            loadKeys();
+            loadUsers();
+        }
+
+        // Socket events
+        socket.on('session-expired', (data) => {
+            if (data.type === 'admin') {
+                localStorage.removeItem('adminSessionId');
+                adminSessionId = null;
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('dashboard').classList.remove('active');
+                document.getElementById('logoutBtn').style.display = 'none';
+                showAlert('Session expired. Silakan login kembali.');
+            }
+        });
+    </script>
+</body>
+</html>
