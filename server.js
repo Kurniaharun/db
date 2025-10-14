@@ -250,38 +250,104 @@ app.post('/api/admin/create-key', requireAdminAuth, (req, res) => {
 });
 
 // Create reseller key
-app.post('/api/admin/create-reseller-key', requireAdminAuth, (req, res) => {
-    const { username, limit = 25 } = req.body;
-    
-    if (!username) {
-        return res.status(400).json({
+app.post('/api/admin/create-reseller-key', requireAdminAuth, async (req, res) => {
+    try {
+        const { username, limit = 25 } = req.body;
+        
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username diperlukan'
+            });
+        }
+        
+        const key = generateKey();
+        
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Cek apakah username reseller sudah ada
+        const { data: existingReseller, error: checkError } = await supabase
+            .from('reseller_user')
+            .select('username')
+            .eq('username', username)
+            .single();
+        
+        if (existingReseller) {
+            return res.status(400).json({
+                success: false,
+                message: `Reseller "${username}" sudah ada!`
+            });
+        }
+        
+        // Insert reseller user ke database
+        const { data: resellerData, error: resellerError } = await supabase
+            .from('reseller_user')
+            .insert([{
+                username: username,
+                total_limit: parseInt(limit),
+                used_slots: 0
+            }])
+            .select();
+        
+        if (resellerError) {
+            return res.status(500).json({
+                success: false,
+                message: 'Gagal membuat reseller user: ' + resellerError.message
+            });
+        }
+        
+        // Insert reseller key ke database
+        const { data: keyData, error: keyError } = await supabase
+            .from('reseller_key')
+            .insert([{
+                key: key,
+                reseller_username: username,
+                device_id: null,
+                last_activity: null
+            }])
+            .select();
+        
+        if (keyError) {
+            // Rollback reseller user jika key gagal
+            await supabase
+                .from('reseller_user')
+                .delete()
+                .eq('username', username);
+            
+            return res.status(500).json({
+                success: false,
+                message: 'Gagal membuat reseller key: ' + keyError.message
+            });
+        }
+        
+        // Simpan juga di memory untuk backward compatibility
+        resellerSessions.set(key, {
+            username,
+            limit: parseInt(limit),
+            deviceId: null,
+            lastActivity: 0,
+            createdAt: new Date().toISOString(),
+            type: 'reseller'
+        });
+        
+        res.json({
+            success: true,
+            message: 'Reseller key berhasil dibuat',
+            data: {
+                key,
+                username,
+                limit: parseInt(limit)
+            }
+        });
+        
+    } catch (error) {
+        res.status(500).json({
             success: false,
-            message: 'Username diperlukan'
+            message: 'Terjadi kesalahan: ' + error.message
         });
     }
-    
-    const key = generateKey();
-    const deviceId = getDeviceId(req);
-    
-    // Simpan reseller key data
-    resellerSessions.set(key, {
-        username,
-        limit: parseInt(limit),
-        deviceId: null, // Belum ada device yang login
-        lastActivity: 0,
-        createdAt: new Date().toISOString(),
-        type: 'reseller'
-    });
-    
-    res.json({
-        success: true,
-        message: 'Reseller key berhasil dibuat',
-        data: {
-            key,
-            username,
-            limit: parseInt(limit)
-        }
-    });
 });
 
 // Create upgrade key
@@ -325,68 +391,137 @@ app.post('/api/admin/create-upgrade-key', requireAdminAuth, (req, res) => {
 });
 
 // Delete key
-app.delete('/api/admin/delete-key/:key', requireAdminAuth, (req, res) => {
-    const { key } = req.params;
-    
-    let deleted = false;
-    let keyType = '';
-    
-    // Try to delete from device sessions (user keys)
-    if (deviceSessions.has(key)) {
-        deviceSessions.delete(key);
-        deleted = true;
-        keyType = 'user';
-    }
-    
-    // Try to delete from reseller sessions
-    if (resellerSessions.has(key)) {
-        resellerSessions.delete(key);
-        deleted = true;
-        keyType = 'reseller';
-    }
-    
-    if (deleted) {
-        res.json({
-            success: true,
-            message: `${keyType} key berhasil dihapus`
-        });
-    } else {
-        res.status(404).json({
+app.delete('/api/admin/delete-key/:key', requireAdminAuth, async (req, res) => {
+    try {
+        const { key } = req.params;
+        
+        let deleted = false;
+        let keyType = '';
+        
+        // Try to delete from device sessions (user keys)
+        if (deviceSessions.has(key)) {
+            deviceSessions.delete(key);
+            deleted = true;
+            keyType = 'user';
+        }
+        
+        // Try to delete from reseller sessions (database)
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const { data: resellerKeyData, error: resellerError } = await supabase
+            .from('reseller_key')
+            .select('reseller_username')
+            .eq('key', key)
+            .single();
+        
+        if (!resellerError && resellerKeyData) {
+            // Hapus reseller key dari database
+            const { error: deleteKeyError } = await supabase
+                .from('reseller_key')
+                .delete()
+                .eq('key', key);
+            
+            if (!deleteKeyError) {
+                // Hapus reseller user dari database
+                const { error: deleteUserError } = await supabase
+                    .from('reseller_user')
+                    .delete()
+                    .eq('username', resellerKeyData.reseller_username);
+                
+                if (!deleteUserError) {
+                    deleted = true;
+                    keyType = 'reseller';
+                }
+            }
+        }
+        
+        // Hapus juga dari memory untuk backward compatibility
+        if (resellerSessions.has(key)) {
+            resellerSessions.delete(key);
+        }
+        
+        if (deleted) {
+            res.json({
+                success: true,
+                message: `${keyType} key berhasil dihapus`
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: 'Key tidak ditemukan'
+            });
+        }
+        
+    } catch (error) {
+        res.status(500).json({
             success: false,
-            message: 'Key tidak ditemukan'
+            message: 'Terjadi kesalahan: ' + error.message
         });
     }
 });
 
 // List all keys
-app.get('/api/admin/keys', requireAdminAuth, (req, res) => {
-    // Combine both device sessions (user keys) and reseller sessions
-    const userKeys = Array.from(deviceSessions.entries()).map(([key, data]) => ({
-        key,
-        username: data.username,
-        limit: data.limit,
-        createdAt: data.createdAt,
-        lastActivity: new Date(data.lastActivity).toLocaleString(),
-        isActive: Date.now() - data.lastActivity < 30 * 60 * 1000,
-        type: 'user'
-    }));
-    
-    const resellerKeys = Array.from(resellerSessions.entries()).map(([key, data]) => ({
-        key,
-        username: data.username,
-        limit: data.limit,
-        createdAt: data.createdAt,
-        lastActivity: data.lastActivity > 0 ? new Date(data.lastActivity).toLocaleString() : 'Never',
-        isActive: data.lastActivity > 0 && Date.now() - data.lastActivity < 30 * 60 * 1000,
-        type: 'reseller'
-    }));
-    
-    const allKeys = [...userKeys, ...resellerKeys];
-    
-    res.json({
-        success: true,
-        data: allKeys
-    });
+app.get('/api/admin/keys', requireAdminAuth, async (req, res) => {
+    try {
+        // User keys dari memory
+        const userKeys = Array.from(deviceSessions.entries()).map(([key, data]) => ({
+            key,
+            username: data.username,
+            limit: data.limit,
+            createdAt: data.createdAt,
+            lastActivity: new Date(data.lastActivity).toLocaleString(),
+            isActive: Date.now() - data.lastActivity < 30 * 60 * 1000,
+            type: 'user'
+        }));
+        
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Reseller keys dari database
+        const { data: resellerKeysData, error: resellerError } = await supabase
+            .from('reseller_key')
+            .select(`
+                key,
+                reseller_username,
+                device_id,
+                last_activity,
+                created_at,
+                reseller_user (
+                    username,
+                    total_limit,
+                    used_slots
+                )
+            `);
+        
+        let resellerKeys = [];
+        if (!resellerError && resellerKeysData) {
+            resellerKeys = resellerKeysData.map((keyData) => ({
+                key: keyData.key,
+                username: keyData.reseller_username,
+                limit: keyData.reseller_user.total_limit,
+                usedSlots: keyData.reseller_user.used_slots,
+                createdAt: new Date(keyData.created_at).toLocaleString(),
+                lastActivity: keyData.last_activity ? new Date(keyData.last_activity).toLocaleString() : 'Never',
+                isActive: keyData.last_activity && (Date.now() - new Date(keyData.last_activity).getTime()) < 30 * 60 * 1000,
+                type: 'reseller'
+            }));
+        }
+        
+        const allKeys = [...userKeys, ...resellerKeys];
+        
+        res.json({
+            success: true,
+            data: allKeys
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan: ' + error.message
+        });
+    }
 });
 
 // Update user limit
@@ -513,45 +648,88 @@ app.get('/api/user/status', (req, res) => {
 // ===== RESELLER ENDPOINTS =====
 
 // Reseller login
-app.post('/api/reseller/login', (req, res) => {
-    const { key } = req.body;
-    const deviceId = getDeviceId(req);
-    
-    if (!key) {
-        return res.status(400).json({
-            success: false,
-            message: 'Key diperlukan'
-        });
-    }
-    
-    const resellerData = resellerSessions.get(key);
-    if (!resellerData) {
-        return res.status(404).json({
-            success: false,
-            message: 'Key tidak valid'
-        });
-    }
-    
-    if (!isResellerKeyValid(key, deviceId)) {
-        return res.status(403).json({
-            success: false,
-            message: 'Key sedang digunakan di device lain atau session expired. Coba lagi dalam 30 menit.'
-        });
-    }
-    
-    // Set reseller session
-    req.session.resellerAuthenticated = true;
-    req.session.resellerKey = key;
-    req.session.resellerUsername = resellerData.username;
-    
-    res.json({
-        success: true,
-        message: 'Login reseller berhasil',
-        data: {
-            username: resellerData.username,
-            limit: resellerData.limit
+app.post('/api/reseller/login', async (req, res) => {
+    try {
+        const { key } = req.body;
+        const deviceId = getDeviceId(req);
+        
+        if (!key) {
+            return res.status(400).json({
+                success: false,
+                message: 'Key diperlukan'
+            });
         }
-    });
+        
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Cek key di database
+        const { data: keyData, error: keyError } = await supabase
+            .from('reseller_key')
+            .select(`
+                key,
+                reseller_username,
+                device_id,
+                last_activity,
+                reseller_user (
+                    username,
+                    total_limit,
+                    used_slots
+                )
+            `)
+            .eq('key', key)
+            .single();
+        
+        if (keyError || !keyData) {
+            return res.status(404).json({
+                success: false,
+                message: 'Key tidak valid'
+            });
+        }
+        
+        // Cek device binding
+        const now = Date.now();
+        if (keyData.device_id && keyData.device_id !== deviceId) {
+            // Cek apakah sudah 30 menit
+            if (keyData.last_activity && (now - new Date(keyData.last_activity).getTime()) < 30 * 60 * 1000) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Key sedang digunakan di device lain atau session expired. Coba lagi dalam 30 menit.'
+                });
+            }
+        }
+        
+        // Update device dan last activity
+        await supabase
+            .from('reseller_key')
+            .update({
+                device_id: deviceId,
+                last_activity: new Date().toISOString()
+            })
+            .eq('key', key);
+        
+        // Set reseller session
+        req.session.resellerAuthenticated = true;
+        req.session.resellerKey = key;
+        req.session.resellerUsername = keyData.reseller_username;
+        
+        res.json({
+            success: true,
+            message: 'Login reseller berhasil',
+            data: {
+                username: keyData.reseller_username,
+                limit: keyData.reseller_user.total_limit,
+                usedSlots: keyData.reseller_user.used_slots
+            }
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan: ' + error.message
+        });
+    }
 });
 
 // Reseller logout
@@ -583,39 +761,40 @@ app.post('/api/reseller/logout', (req, res) => {
 app.get('/api/reseller/stats', requireResellerAuth, async (req, res) => {
     try {
         const resellerKey = req.resellerKey;
-        const resellerData = resellerSessions.get(resellerKey);
         
-        if (!resellerData) {
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Ambil data reseller dari database
+        const { data: resellerData, error: resellerError } = await supabase
+            .from('reseller_key')
+            .select(`
+                reseller_username,
+                reseller_user (
+                    username,
+                    total_limit,
+                    used_slots
+                )
+            `)
+            .eq('key', resellerKey)
+            .single();
+        
+        if (resellerError || !resellerData) {
             return res.status(404).json({
                 success: false,
                 message: 'Reseller data tidak ditemukan'
             });
         }
         
-        // Import Supabase client
-        const { createClient } = require('@supabase/supabase-js');
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // Hitung jumlah user yang ditambahkan oleh reseller ini
-        const { data: userCount, error: countError } = await supabase
-            .from('whitelist')
-            .select('count', { count: 'exact', head: true });
-        
-        if (countError) {
-            return res.status(500).json({
-                success: false,
-                message: 'Gagal menghitung user: ' + countError.message
-            });
-        }
-        
-        const usedSlots = userCount || 0;
-        const remainingSlots = Math.max(0, resellerData.limit - usedSlots);
+        const usedSlots = resellerData.reseller_user.used_slots;
+        const remainingSlots = Math.max(0, resellerData.reseller_user.total_limit - usedSlots);
         
         res.json({
             success: true,
             data: {
-                username: resellerData.username,
-                limit: resellerData.limit,
+                username: resellerData.reseller_username,
+                limit: resellerData.reseller_user.total_limit,
                 usedSlots,
                 remainingSlots
             }
@@ -667,7 +846,6 @@ app.post('/api/reseller/add-user', requireResellerAuth, async (req, res) => {
     try {
         const { username } = req.body;
         const resellerKey = req.resellerKey;
-        const resellerData = resellerSessions.get(resellerKey);
         
         if (!username) {
             return res.status(400).json({
@@ -680,22 +858,35 @@ app.post('/api/reseller/add-user', requireResellerAuth, async (req, res) => {
         const { createClient } = require('@supabase/supabase-js');
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // Cek limit
-        const { data: currentCount, error: countError } = await supabase
-            .from('whitelist')
-            .select('count', { count: 'exact', head: true });
+        // Ambil data reseller dari database
+        const { data: resellerData, error: resellerError } = await supabase
+            .from('reseller_key')
+            .select(`
+                reseller_username,
+                reseller_user (
+                    username,
+                    total_limit,
+                    used_slots
+                )
+            `)
+            .eq('key', resellerKey)
+            .single();
         
-        if (countError) {
-            return res.status(500).json({
+        if (resellerError || !resellerData) {
+            return res.status(404).json({
                 success: false,
-                message: 'Gagal mengecek limit: ' + countError.message
+                message: 'Reseller data tidak ditemukan'
             });
         }
         
-        if (currentCount >= resellerData.limit) {
+        // Cek limit
+        const usedSlots = resellerData.reseller_user.used_slots;
+        const totalLimit = resellerData.reseller_user.total_limit;
+        
+        if (usedSlots >= totalLimit) {
             return res.status(403).json({
                 success: false,
-                message: `Limit whitelist tercapai (${resellerData.limit}). Tidak bisa menambah lagi.`
+                message: `Limit whitelist tercapai (${totalLimit}). Tidak bisa menambah lagi.`
             });
         }
         
@@ -713,7 +904,7 @@ app.post('/api/reseller/add-user', requireResellerAuth, async (req, res) => {
             });
         }
         
-        // Tambah username baru
+        // Tambah username baru ke whitelist
         const { data, error } = await supabase
             .from('whitelist')
             .insert([{ username: username }])
@@ -726,9 +917,28 @@ app.post('/api/reseller/add-user', requireResellerAuth, async (req, res) => {
             });
         }
         
+        // Update used_slots di reseller_user
+        const { error: updateError } = await supabase
+            .from('reseller_user')
+            .update({ used_slots: usedSlots + 1 })
+            .eq('username', resellerData.reseller_username);
+        
+        if (updateError) {
+            // Rollback whitelist jika update reseller gagal
+            await supabase
+                .from('whitelist')
+                .delete()
+                .eq('username', username);
+            
+            return res.status(500).json({
+                success: false,
+                message: 'Gagal update limit reseller: ' + updateError.message
+            });
+        }
+        
         res.json({
             success: true,
-            message: `Username "${username}" berhasil ditambahkan ke whitelist!`
+            message: `Username "${username}" berhasil ditambahkan ke whitelist! Limit tersisa: ${totalLimit - usedSlots - 1}`
         });
         
     } catch (error) {
@@ -743,6 +953,7 @@ app.post('/api/reseller/add-user', requireResellerAuth, async (req, res) => {
 app.delete('/api/reseller/delete-user', requireResellerAuth, async (req, res) => {
     try {
         const { username } = req.body;
+        const resellerKey = req.resellerKey;
         
         if (!username) {
             return res.status(400).json({
@@ -755,6 +966,28 @@ app.delete('/api/reseller/delete-user', requireResellerAuth, async (req, res) =>
         const { createClient } = require('@supabase/supabase-js');
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        // Ambil data reseller dari database
+        const { data: resellerData, error: resellerError } = await supabase
+            .from('reseller_key')
+            .select(`
+                reseller_username,
+                reseller_user (
+                    username,
+                    total_limit,
+                    used_slots
+                )
+            `)
+            .eq('key', resellerKey)
+            .single();
+        
+        if (resellerError || !resellerData) {
+            return res.status(404).json({
+                success: false,
+                message: 'Reseller data tidak ditemukan'
+            });
+        }
+        
+        // Hapus dari whitelist
         const { data, error } = await supabase
             .from('whitelist')
             .delete()
@@ -769,6 +1002,20 @@ app.delete('/api/reseller/delete-user', requireResellerAuth, async (req, res) =>
         }
         
         if (data && data.length > 0) {
+            // Update used_slots di reseller_user (kurangi 1)
+            const usedSlots = resellerData.reseller_user.used_slots;
+            const { error: updateError } = await supabase
+                .from('reseller_user')
+                .update({ used_slots: Math.max(0, usedSlots - 1) })
+                .eq('username', resellerData.reseller_username);
+            
+            if (updateError) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Gagal update limit reseller: ' + updateError.message
+                });
+            }
+            
             res.json({
                 success: true,
                 message: `Username "${username}" berhasil dihapus dari whitelist!`
@@ -875,17 +1122,52 @@ app.post('/api/reseller/upgrade-limit', requireResellerAuth, async (req, res) =>
             });
         }
         
-        // Update reseller limit
-        const resellerData = resellerSessions.get(resellerKey);
-        if (!resellerData) {
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Ambil data reseller dari database
+        const { data: resellerData, error: resellerError } = await supabase
+            .from('reseller_key')
+            .select(`
+                reseller_username,
+                reseller_user (
+                    username,
+                    total_limit,
+                    used_slots
+                )
+            `)
+            .eq('key', resellerKey)
+            .single();
+        
+        if (resellerError || !resellerData) {
             return res.status(404).json({
                 success: false,
                 message: 'Reseller data tidak ditemukan'
             });
         }
         
-        const newLimit = resellerData.limit + 25;
-        resellerData.limit = newLimit;
+        const currentLimit = resellerData.reseller_user.total_limit;
+        const newLimit = currentLimit + 25;
+        
+        // Update limit di database
+        const { error: updateError } = await supabase
+            .from('reseller_user')
+            .update({ total_limit: newLimit })
+            .eq('username', resellerData.reseller_username);
+        
+        if (updateError) {
+            return res.status(500).json({
+                success: false,
+                message: 'Gagal update limit: ' + updateError.message
+            });
+        }
+        
+        // Update juga di memory untuk backward compatibility
+        const memoryResellerData = resellerSessions.get(resellerKey);
+        if (memoryResellerData) {
+            memoryResellerData.limit = newLimit;
+        }
         
         // Mark upgrade key as used
         upgradeData.used = true;
