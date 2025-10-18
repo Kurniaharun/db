@@ -66,31 +66,38 @@ function isDeviceAllowed(key, deviceId) {
     return false;
 }
 
-// Helper function untuk reseller authentication
-function isResellerKeyValid(key, deviceId) {
-    const keyData = resellerSessions.get(key);
-    if (!keyData) return false;
-    
-    // Jika device sama, allow
-    if (keyData.deviceId === deviceId) return true;
-    
-    // Jika device berbeda, cek apakah sudah 30 menit
-    const now = Date.now();
-    if (now - keyData.lastActivity > 30 * 60 * 1000) {
-        // Update device
-        keyData.deviceId = deviceId;
-        keyData.lastActivity = now;
-        return true;
-    }
-    
-    return false;
-}
+// Helper function untuk reseller authentication (DEPRECATED - menggunakan database langsung)
+// function isResellerKeyValid(key, deviceId) {
+//     const keyData = resellerSessions.get(key);
+//     if (!keyData) return false;
+//     
+//     // Jika device sama, allow
+//     if (keyData.deviceId === deviceId) return true;
+//     
+//     // Jika device berbeda, cek apakah sudah 30 menit
+//     const now = Date.now();
+//     if (now - keyData.lastActivity > 30 * 60 * 1000) {
+//         // Update device
+//         keyData.deviceId = deviceId;
+//         keyData.lastActivity = now;
+//         return true;
+//     }
+//     
+//     return false;
+// }
 
 function updateResellerActivity(key, deviceId) {
     const keyData = resellerSessions.get(key);
     if (keyData) {
         keyData.lastActivity = Date.now();
         keyData.deviceId = deviceId;
+    } else {
+        // Jika tidak ada di memory, buat entry baru untuk backward compatibility
+        resellerSessions.set(key, {
+            deviceId: deviceId,
+            lastActivity: Date.now(),
+            type: 'reseller'
+        });
     }
 }
 
@@ -145,30 +152,70 @@ function requireKeyAuth(req, res, next) {
 }
 
 // Middleware untuk cek reseller key auth
-function requireResellerAuth(req, res, next) {
-    const key = req.headers['x-api-key'] || req.body.key || req.query.key;
-    const deviceId = getDeviceId(req);
-    
-    if (!key) {
-        return res.status(401).json({ 
-            error: 'Unauthorized', 
-            message: 'Reseller key required' 
+async function requireResellerAuth(req, res, next) {
+    try {
+        const key = req.headers['x-api-key'] || req.body.key || req.query.key;
+        const deviceId = getDeviceId(req);
+        
+        if (!key) {
+            return res.status(401).json({ 
+                error: 'Unauthorized', 
+                message: 'Reseller key required' 
+            });
+        }
+        
+        // Import Supabase client
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Cek key di database
+        const { data: keyData, error: keyError } = await supabase
+            .from('reseller_key')
+            .select('key, device_id, last_activity')
+            .eq('key', key)
+            .single();
+        
+        if (keyError || !keyData) {
+            return res.status(404).json({ 
+                error: 'Key not found', 
+                message: 'Reseller key tidak valid' 
+            });
+        }
+        
+        // Cek device binding
+        const now = Date.now();
+        if (keyData.device_id && keyData.device_id !== deviceId) {
+            // Cek apakah sudah 30 menit
+            if (keyData.last_activity && (now - new Date(keyData.last_activity).getTime()) < 30 * 60 * 1000) {
+                return res.status(403).json({ 
+                    error: 'Device not allowed', 
+                    message: 'Key sedang digunakan di device lain atau session expired' 
+                });
+            }
+        }
+        
+        // Update device dan last activity di database
+        await supabase
+            .from('reseller_key')
+            .update({
+                device_id: deviceId,
+                last_activity: new Date().toISOString()
+            })
+            .eq('key', key);
+        
+        // Update juga di memory untuk backward compatibility
+        updateResellerActivity(key, deviceId);
+        
+        req.resellerKey = key;
+        req.deviceId = deviceId;
+        next();
+        
+    } catch (error) {
+        return res.status(500).json({ 
+            error: 'Server error', 
+            message: 'Terjadi kesalahan: ' + error.message 
         });
     }
-    
-    if (!isResellerKeyValid(key, deviceId)) {
-        return res.status(403).json({ 
-            error: 'Device not allowed', 
-            message: 'Key sedang digunakan di device lain atau session expired' 
-        });
-    }
-    
-    // Update activity
-    updateResellerActivity(key, deviceId);
-    
-    req.resellerKey = key;
-    req.deviceId = deviceId;
-    next();
 }
 
 // Admin login
@@ -733,28 +780,51 @@ app.post('/api/reseller/login', async (req, res) => {
 });
 
 // Reseller logout
-app.post('/api/reseller/logout', (req, res) => {
-    const key = req.resellerKey || req.session.resellerKey;
-    
-    if (key && resellerSessions.has(key)) {
-        // Reset device untuk allow login di device lain
-        const resellerData = resellerSessions.get(key);
-        resellerData.deviceId = null;
-        resellerData.lastActivity = 0;
-    }
-    
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal logout' 
-            });
+app.post('/api/reseller/logout', async (req, res) => {
+    try {
+        const key = req.resellerKey || req.session.resellerKey;
+        
+        if (key) {
+            // Import Supabase client
+            const { createClient } = require('@supabase/supabase-js');
+            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            // Reset device di database untuk allow login di device lain
+            await supabase
+                .from('reseller_key')
+                .update({
+                    device_id: null,
+                    last_activity: null
+                })
+                .eq('key', key);
+            
+            // Reset juga di memory untuk backward compatibility
+            if (resellerSessions.has(key)) {
+                const resellerData = resellerSessions.get(key);
+                resellerData.deviceId = null;
+                resellerData.lastActivity = 0;
+            }
         }
-        res.json({ 
-            success: true, 
-            message: 'Reseller logout berhasil!' 
+        
+        req.session.destroy((err) => {
+            if (err) {
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Gagal logout' 
+                });
+            }
+            res.json({ 
+                success: true, 
+                message: 'Reseller logout berhasil!' 
+            });
         });
-    });
+        
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: 'Terjadi kesalahan: ' + error.message 
+        });
+    }
 });
 
 // Get reseller stats
